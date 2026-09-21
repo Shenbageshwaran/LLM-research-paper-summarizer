@@ -1,0 +1,42 @@
+{
+  "title": "The Euler characteristic: A general topological descriptor for complex data",
+  "authors": [
+    "Alexander Smith",
+    "Victor M. Zavala"
+  ],
+  "motivation": "Datasets are mathematical objects with shape that encodes important knowledge about systems under study. While popular tools from statistics, linear algebra, and signal processing characterize variance and frequency content, they do not directly characterize geometrical features of data objects. Topology provides powerful tools to characterize shape, and the Euler characteristic (EC) offers advantages over statistical descriptors by capturing global structure and encoding information about simple and complex statistical descriptors without requiring assumptions like isotropy or stationarity.",
+  "knowledge_gap": "The EC has seen limited applications in engineering, with most focused on characterizing permeability of porous media. The generality of the EC as a descriptor of different types of topological spaces (through transformations and fundamental connections with multiple mathematical fields) is often overlooked in the literature.",
+  "goal": "To present an applied perspective on the Euler characteristic as a general, low-dimensional, and interpretable descriptor of topological spaces defined by data objects. The authors aim to revise the mathematical foundations of the EC, highlight its connections with statistics, linear algebra, field theory, and graph theory, and demonstrate its use in diverse applications in chemical engineering such as process monitoring, flow cytometry, and microscopy.",
+  "methods": [
+    "Euler characteristic computation for graphs and manifolds",
+    "Filtration of edge-weighted graphs",
+    "Filtration of node-weighted graphs",
+    "Superlevel set filtration for continuous fields",
+    "EC curve construction",
+    "Singular value decomposition for visualization",
+    "Support vector machine classification",
+    "Gaussian kernel smoothing for point cloud analysis"
+  ],
+  "metrics": [
+    "Classification accuracy (98 ± 1% for EC-based SVM vs 50 ± 3% for raw images and 53 ± 1% for Fourier spectrum)",
+    "Euclidean distance between EC curves over time",
+    "Principal component analysis separation quality"
+  ],
+  "experiments": "Brain functional network analysis using fMRI data (OpenNeuro dataset ds000228); Tennessee Eastman chemical process fault detection dataset; reaction-diffusion PDE simulations with varying parameters; liquid crystal micrograph analysis; flow cytometry data from FlowRepository (FR-FCM-ZZC9) studying gene transcription kinetics in human blood mononuclear cells",
+  "key_findings": [
+    "The EC effectively characterizes topological differences in complex functional networks, distinguishing between developed and underdeveloped brains based on correlation structure",
+    "The EC can detect chemical process faults based on topological structure of precision matrices, with separation into fault groups related to different process mechanisms",
+    "EC curves capture topological differences in reaction-diffusion fields induced by different parameter settings, providing distinct clustering that Fourier analysis cannot achieve",
+    "EC provides sharper separation than traditional methods (SVD, Fourier transform, Moran's I) for characterizing liquid crystal micrographs, enabling 98% classification accuracy with linear SVM",
+    "EC can characterize evolution of point cloud shapes over time, showing continuous mapping between EC and time for flow cytometry data",
+    "EC serves as effective data pre-processing step that reduces dimensionality and facilitates visualization, regression, classification, and clustering tasks"
+  ],
+  "future_work": [
+    "Explore use of EC to characterize more complex data objects such as random fields, tensors, and simplices",
+    "Explore new applications including characterization of topology of objective functions in optimization problems",
+    "Develop statistical methods for EC curves, including hypothesis testing, which are needed for broad application in science and engineering",
+    "Investigate the reason for separation of fault groups in chemical process monitoring",
+    "Construct dynamical models that predict evolution of shape with time"
+  ],
+  "paper_type": "methods"
+}

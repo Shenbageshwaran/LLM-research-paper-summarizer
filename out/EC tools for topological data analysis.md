@@ -1,0 +1,55 @@
+# Euler Characteristic Tools for Topological Data Analysis
+
+**Authors:** Olympio Hacquard, Vadim Lebovici  
+**Type:** empirical
+
+## Motivation
+
+Extracting topological information from data typically relies on persistence diagrams, which are difficult to use directly in machine learning due to their metric space properties and the challenge of vectorization. While Euler characteristic-based descriptors are simpler and computationally cheaper than persistence diagram methods, they have been underexplored. The paper argues that Euler characteristic techniques deserve more attention because they offer reduced computational cost, natural generalization to multi-parameter settings, and strong theoretical guarantees, while maintaining competitive predictive power.
+
+## Knowledge gap
+
+Prior work on multi-parameter persistence lacks complete combinatorial descriptors analogous to persistence diagrams. While persistence landscapes and images have been generalized to multi-parameter settings, they suffer from high computational cost. Additionally, there is limited understanding of how Euler characteristic tools perform in supervised and unsupervised machine learning tasks compared to persistence diagram-based methods, and theoretical results for multi-parameter settings are scarce.
+
+## Goal
+
+To demonstrate that Euler characteristic profiles and their hybrid transforms are informative and highly efficient topological descriptors for machine learning tasks, and to provide theoretical guarantees including stability results and asymptotic properties for these descriptors.
+
+## Methods
+
+- Euler characteristic profiles (pointwise Euler characteristic of families of simplicial complexes)
+- Hybrid transforms (integral transforms mixing Lebesgue integration with Euler characteristic techniques)
+- Pushforward operations from Euler calculus
+- Alpha filtrations and function-alpha filtrations on point clouds
+- Heat kernel signature and Ricci/Forman curvatures on graphs
+- XGBoost, random forest, and support vector machine classifiers
+
+## Metrics
+
+- R² score (regression)
+- Classification accuracy with standard deviation
+- Computation time (seconds)
+- Feature dimension reduction analysis
+- PCA and LDA visualizations
+
+## Experiments
+
+["Curvature regression on surfaces of constant curvature (1000 points per sample)", "ORBIT5K dataset (700 training and 300 testing orbits per class, 5 classes)", "Sydney urban objects recognition dataset (3D LIDAR point clouds, multi-class classification)", "Graph classification on 8 benchmark datasets (mutag, cox2, dhfr, proteins, collab, imdb-b, imdb-m, nci1)", "Synthetic experiments: Poisson vs Ginibre point processes, manifold sampling variations, pattern detection in clutter noise"]
+
+## Key findings
+
+- Euler characteristic profiles achieve state-of-the-art accuracy in supervised tasks when coupled with gradient boosting or random forests at minimal computational cost
+- Hybrid transforms act as highly efficient information compressors, requiring much smaller resolution than Euler profiles to reach similar performance
+- Hybrid transforms outperform Euler profiles in unsupervised classification and with linear classifiers
+- Euler profiles are at least 10 times faster to compute than persistence images; hybrid transforms are 4 times faster in the 2-parameter case
+- Stability results show L¹ norm bounds on Euler profiles controlled by signed 1-Wasserstein distance between signed barcodes
+- Asymptotic normality is established for hybrid transforms of random samples in the critical regime
+- Multi-parameter hybrid transforms can be expressed as one-parameter transforms, enabling law of large numbers in multi-filtration settings
+- The method naturally generalizes to 5-parameter filtrations on graph data, the first topology-based method to use more than 3 parameters
+
+## Future work
+
+- Application to cubical complexes built on images and 3D volumes, with thorough benchmarking against other persistence methods and state-of-the-art image processing methods
+- Extension to time-varying simplicial complexes and non-monotone filtrations
+- Investigation of hybrid transforms in the image processing context
+- Derivation of multi-dimensional central limit theorems for function-Čech and function-alpha filtrations

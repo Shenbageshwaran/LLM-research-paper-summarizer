@@ -1,0 +1,57 @@
+# The Euler characteristic: A general topological descriptor for complex data
+
+**Authors:** Alexander Smith, Victor M. Zavala  
+**Type:** methods
+
+## Motivation
+
+Datasets are mathematical objects with shape that encodes important knowledge about systems under study. While popular tools from statistics, linear algebra, and signal processing characterize variance and frequency content, they do not directly characterize geometrical features of data objects. Topology provides powerful tools to characterize shape, and the Euler characteristic (EC) offers a general, low-dimensional, and interpretable descriptor of topological spaces defined by data objects.
+
+## Knowledge gap
+
+The EC has seen limited applications in engineering, with most focused on characterizing permeability of porous media. The generality of the EC as a descriptor of different types of topological spaces—arising from transformations mapping data objects into other types and fundamental connections with statistics, field theory, linear algebra, and graph theory—is often overlooked in the literature.
+
+## Goal
+
+To present an applied perspective on the Euler characteristic, discuss its mathematical foundations and connections with statistics, linear algebra, field theory, and graph theory, and demonstrate how the EC can be used to characterize complex datasets in applications such as process monitoring, flow cytometry, and microscopy.
+
+## Methods
+
+- Euler characteristic computation for graphs and manifolds
+- Filtration of edge-weighted graphs
+- Filtration of node-weighted graphs
+- Superlevel set filtration for continuous fields
+- EC curve construction
+- Precision matrix analysis from multivariate time series
+- Gaussian kernel smoothing for point cloud density estimation
+- Singular value decomposition for visualization and clustering
+
+## Metrics
+
+- Classification accuracy (SVM with EC curves: 98 ± 1% vs. raw images: 50 ± 3% vs. Fourier spectrum: 53 ± 1%)
+- Euclidean distance between EC curves
+- Principal component analysis separation
+- Comparison with Moran's I spatial autocorrelation
+
+## Experiments
+
+Brain functional network analysis (fMRI dataset from OpenNeuro ds000228 comparing developed and underdeveloped brains); Tennessee Eastman chemical process fault detection dataset (52 variables); Reaction-diffusion PDE system with varying diffusion and reaction coefficients (30 realizations per parameter setting); Liquid crystal micrographs exposed to different gaseous environments; Flow cytometry dataset (FlowRepository FR-FCM-ZZC9) tracking CD4 mRNA and IFN-γ mRNA concentrations in stimulated human blood mononuclear cells over time (~15,000 cells per time point)
+
+## Key findings
+
+- The EC is a scalar integer quantity defined as the alternating sum of Betti numbers that characterizes topological features of data objects
+- EC curves effectively reduce complex datasets and facilitate visualization, regression, classification, and clustering tasks
+- EC provides sharper separation than traditional methods (SVD, Fourier analysis, Moran's I) for characterizing spatial heterogeneity in images
+- EC curves from precision matrices can distinguish between normal and faulty chemical process operation and separate fault types
+- EC curves from brain functional networks differ between developed and underdeveloped brains, demonstrating applicability to neuroscience
+- EC curves effectively capture topological differences in reaction-diffusion fields with different parameter settings
+- EC curves characterize evolution of point cloud shapes over time in flow cytometry data, showing continuous topological deformation
+- EC is computationally efficient, requiring only simple thresholding and arithmetic operations
+
+## Future work
+
+- Explore use of EC to characterize more complex data objects such as random fields, tensors, and simplices
+- Explore new applications including characterization of objective function topology in optimization problems
+- Develop statistical methods for EC curves, including hypothesis testing procedures
+- Investigate optimization of time-dependent or space-dependent functions by optimizing their EC
+- Explore the separation of fault types in chemical process monitoring in more detail

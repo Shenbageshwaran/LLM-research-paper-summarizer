@@ -1,0 +1,1357 @@
+Contents lists available at ScienceDirect 
+Computers and Chemical Engineering 
+journal homepage: www.elsevier.com/locate/compchemeng 
+Topological data analysis: Concepts, computation, and applications in 
+chemical engineering 
+Alexander D. Smith a , Paweł Dłotko b , Victor M. Zavala a , ∗
+a Department of Chemical and Biological Engineering University of Wisconsin-Madison, 1415 Engineering Dr, Madison, WI 53706, USA 
+b Diouscuri Center for Topological Data Analysis Institute of Mathematics, Polish Academy of Sciences, ´Sniadeckich 8, Warsaw 00-656, Poland 
+a r t i c l e 
+i n f o 
+Article history: 
+Received 3 June 2020 
+Revised 2 December 2020 
+Accepted 9 December 2020 
+Available online 15 December 2020 
+Keywords: 
+Data 
+Topology 
+Space 
+Time 
+Geometry 
+Engineering 
+a b s t r a c t 
+A primary hypothesis that drives scientiﬁc and engineering studies is that data has structure. The dominant paradigms for describing such structure are statistics (e.g., moments, correlation functions) and signal processing (e.g., convolutional neural nets, Fourier series). Topological Data Analysis (TDA) is a ﬁeld of 
+mathematics that analyzes data from a fundamentally different perspective. TDA represents datasets as 
+geometric objects and provides dimensionality reduction techniques that project such objects onto lowdimensional descriptors. The key properties of these descriptors (also known as topological features) are 
+that they provide multiscale information and that they are stable under perturbations (e.g., noise, translation, and rotation). In this work, we review the key mathematical concepts and methods of TDA and 
+present different applications in chemical engineering. 
+© 2020 Elsevier Ltd. All rights reserved. 
+1. Introduction 
+Statistical and signal processing techniques are the dominant 
+paradigms used to analyze data. Unfortunately, these techniques 
+provide limited capabilities to analyze certain types of datasets. 
+Some interesting examples that highlight this limitation are the 
+Anscombe quartet and the Datasaurus dozen datasets ( Anscombe, 
+1973; Matejka and Fitzmaurice, 2017 ). These datasets are visually 
+distinct but they have the same descriptive statistics (e.g., mean, 
+standard deviation and correlation ). An illustration of this limitation 
+is provided in Fig. 1 ; here, the two datasets have the same mean 
+and standard deviation along both dimensions and have the same 
+correlation between dimensions. However, it is clear that these 
+datasets deﬁne objects with different geometric features (shapes). 
+The recent application of algebraic and computational topology 
+to data science has led to the development of a new ﬁeld known as 
+Topological Data Analysis (TDA) ( Carlsson, 2009 ). TDA techniques 
+are based on the observation that data (e.g., a set of points in a 
+Euclidean space) can be interpreted as elements of a geometric object. As the name suggests, TDA utilizes techniques from computational topology to quantify the shape of data ( Edelsbrunner and 
+Harer, 2010 ). Fundamentally, topology studies geometric and spatial relations that persist (are stable) in the face of continuous deformations of an object (e.g., stretching, twisting, and bending). 
+∗Corresponding author. 
+E-mail address: victor.zavala@wisc.edu (V.M. Zavala). 
+This perspective brings a number of advantages over other data 
+analysis techniques ( Carlsson, 2009; Zomorodian, 2012 ): 
+• Topology studies data in a manner that is independent of the 
+chosen coordinates. 
+• Topology studies data in a way that minimizes sensitivity to the 
+choice of metric. 
+• Topology generalizes known graph theory techniques to highdimensional spaces. 
+• Topology is robust to noise. 
+The main focus of this paper is a TDA technique known as persistence homology ( Ghrist, 2008; Carlsson et al., 2005 ). The goal 
+of persistent homology is to identify and quantify topologically 
+dominant features within the data in the form of basic (lowdimensional) objects such as connected components, holes, voids, 
+and their generalizations. This information can then be used by 
+statistical and machine learning techniques to perform regression, 
+classiﬁcation, hypothesis testing, and clustering tasks ( Bubenik, 
+2015; Bubenik et al., 2010; Bubenik and Dłotko, 2017; Blumberg 
+et al., 2014; Adams et al., 2017; Reininghaus et al., 2015 ). The TDA 
+methodology is summarized in Fig. 2 . It is important to emphasize that TDA is a dimensionality reduction technique that maps 
+data from its original high-dimensional space to a low-dimensional 
+space that it is easier to understand and visualize. This is similar in 
+spirit to principal component analysis (PCA), which is a statistical 
+technique that projects data into a low dimensional space by exhttps://doi.org/10.1016/j.compchemeng.2020.107202 
+0098-1354/© 2020 Elsevier Ltd. All rights reserved. 
+
+Fig. 1. Datasets with the same mean along the x 1 , x 2 dimensions (zero), the same standard deviation along both dimensions ( 1 / 2 ) and the same correlation between 
+dimensions (zero). While the statistical descriptor values (i.e., ﬁrst and second moments of a 2D Gaussian ellipse) are identical, the geometric objects that they deﬁne are 
+different. 
+Fig. 2. Persistence homology methodology for point clouds: each point cloud is converted into a geometric object via a ﬁltration where the topology is measured at each 
+point in the ﬁltration. At certain points in the ﬁltration topological features, such as the holes above, appear and are eventually ﬁlled. The ϵ value at the appearance and 
+disappearance of these features are recorded as birth and death in the ﬁltration. The birth and death of the topological features are represented as points in a persistence 
+diagram, with x = birth and y = death and persistence deﬁned as ( y −x ). The persistence diagram encodes the topological evolution of the data during the ﬁltration and 
+can be used directly to separate point clouds of different shape and cluster those of similar shape. In this illustration we create a representative classiﬁcation plot that 
+demonstrates the separation of example point clouds based upon the persistence of the largest and second largest (which is zero in some cases) hole(s) that appear and 
+disappear during the ﬁltration. 
+tracting latent variables (principal components) that contain maximum information in terms of variance. 
+TDA has been used in different scientiﬁc and engineering domains. In the medical imaging ﬁeld, persistent homology has been 
+used in studying brain dendrograms ( Lee et al., 2012 ) and in identifying brain networks in children with ADHD and autism ( Lee et al., 
+2011 ). In material science, these techniques have been used to 
+characterize complex craze formations ( Ichinomiya et al., 2017 ), to 
+analyze hierarchical structures in glasses ( Nakamura et al., 2015 ), 
+and in materials informatics ( Buchet et al., 2018 ). They have also 
+been used in high throughput screening of nanoporous materials, 
+such as zeolites ( Lee et al., 2018 ). TDA has been used in the analysis of dynamical systems and time series ( Seversky et al., 2016; 
+Perea and Harer, 2015 ) to study gene expression ( Perea et al., 2015 ) 
+and the dynamics of Kolmogorov ﬂows and Raleigh-Bernard convection ( Kramár et al., 2016 ). TDA has also been used in the analysis of time-varying functional networks ( Stolz et al., 2017 ). In 
+chemistry and biochemistry, persistent homology has been used 
+to characterize protein structure, ﬂexibility, and folding ( Xia and 
+Wei, 2014 ); as well as a metric for understanding membrane fusion ( Kasson et al., 2007 ), and used to predict fullerene stability 
+( Xia et al., 2015 ). 
+In this work, we provide a concise summary of relevant concepts and computational methods of TDA, from the perspective of 
+chemical engineering applications. We show how to apply persistent homology techniques to analyze datasets described by point 
+clouds and functions in high dimensions and we discuss fundamental stability results of topological features in the face of perturbations. We present multiple case studies with complex synthetic 
+and real experimental datasets to demonstrate the beneﬁts of TDA. 
+Speciﬁcally, we show that TDA extracts informative features from 
+complex datasets that correlate strongly with emerging features of 
+practical interest. For instance, we show that the topological features of a 3D solution environment explain reactivity in such an 
+environment and that topological features of liquid crystals explain 
+composition of its environment. These results are presented for the 
+ﬁrst time in this paper. Moreover, we show how to characterize 
+topological features of scatter ﬁelds from ﬂow cytometry experiments. Our work seeks to open new research directions and applications of TDA in chemical engineering. 
+2. TDA basics 
+The ﬁrst part of this paper develops the mathematical basis for 
+TDA (see Sections 3 –5 ) while the second part explores the application of TDA to different chemical engineering problems (see 
+Section 6 ). We develop this section as a simpliﬁed overview of 
+TDA in order to equip the reader with the knowledge necessary 
+to immediately review TDA applications of interest. The focus of 
+TDA is to capture and record the evolution of the topology of a 
+dataset at different scales, which is measured through a ﬁltration 
+(see Section 5 ). Fig. 2 is an example of applying TDA to two simple 
+point clouds. On point clouds, a ﬁltration is performed by expanding balls of radius ϵ around each data point, and connecting those 
+points for which the given balls overlap. This changes the topology 
+of the data representation as the expansion proceeds, resulting in 
+the appearance and disappearance of topological features such as 
+2 
+
+Fig. 3. Examples of k -dimensional simplices for k = 0 , 1 , 2 , 3 . A simplex is a generalization of a triangle in high dimensions. 0- simplices are vertices (points), 1-simplices 
+are edges, 2-simplices are triangles, and 3-simplices are tetrahedra. 
+connected components (represented by H 0 ) and holes (represented 
+by H 1 ). A similar ﬁltration can also be constructed on continuous 
+functions (see Section 5.3 ) or on discrete representations of continuous functions such as images (see Section 5.4 ). Regardless of 
+how the ﬁltration is performed, the time of appearance (birth) and 
+the time of disappearance (death) of the topological features during the ﬁltration can be summarized in a persistence diagram. The 
+persistence diagram is a scatter plot for which the x axis is birth 
+and the y axis is death. All topological features that appear and 
+disappear during the ﬁltration are recorded as points with coordinates x = birth and y = death and persistence ( y −x ) within their 
+representative group (e.g., H 0 , H 1 ). This scatter plot encodes (reduces) the high-dimensional structure of the dataset during the ﬁltration and can be vectorized (see Section 5.2 ) for use in statistical 
+and machine learning models and methods, as we demonstrate in 
+Section 6 . 
+3. Fundamental concepts of TDA 
+We begin with a fundamental discussion of TDA concepts and 
+computational implementations. We ﬁrst introduce the notion of 
+simplicial and cubical complexes, which are the basic geometric 
+constructs used to represent data objects. The representation of 
+data objects as a simplicial or cubical complex enables the use of 
+methods from simplicial and cubical homology to quantify the shape 
+of the data in terms of connectedness and topologically important 
+features ( Hatcher, 20 0 0; Kan, 1955 ). In the following discussion, we 
+use R to denote the set of real numbers and Z to denote the set of 
+integer numbers. 
+3.1. Simplices and simplicial complexes 
+A simplex is a generalization of a triangle from 2D to other 
+dimensions (e.g., a tetrahedron is a 3-dimensional simplex). Simplices spanning dimension k = 0 to dimension k = 3 are shown in 
+Fig. 3 . The formal deﬁnition of a simplex is as follows. 
+Deﬁnition 3.1. k -simplex: A k - simplex is a convex hull spanned by 
+k + 1 aﬃnely independent points v ∈ R m and is denoted as: 
+σ = [ v 0 , v 1 , . . . , v k ] 
+(3.1) 
+Some interesting properties of simplices are: 
+1. An m -face of simplex σ
+is the convex hull of any of its 
+nonempty subsets. 
+2. The m -face is a simplex. 
+3. A 0-face is a vertex . 
+4. A 1-face is an edge . 
+A simplicial complex (denoted as K) is obtained by connecting 
+(glueing) simplices, as shown in Fig. 4 a. We denote the dimension 
+of a given simplex or simplicial complex as dim (·) . 
+Deﬁnition 3.2. Simplicial Complex: A simplicial complex K ⊂R m is 
+a collection of simplices that satisﬁes the following properties: 
+1. Every face of an element of K is also in K
+2. A nonempty intersection of simplices σ1 , σ2 ∈ K is a face of σ1 
+and σ2 
+3. The dimension of K is the highest dimension of its simplices: 
+dim (K) = max ( dim (σ ) : σ ∈ K) 
+A simplicial complex is used to represent the topological characteristics of objects. One example of this is found in ﬁnite element analysis, where simplicial complexes (also known as triangulations) are used to represent domains over which partial differential equations are solved ( Cook et al., 2007 ). In Figure 4 b we represent a geometric object (a ring) as a simplicial complex. We see 
+that the central hole of the ring, which is its main topological feature, is preserved in its representation as the simplicial complex. 
+These objects are said to be homotopy equivalent (represented 
+by the notation ≃ ). Homotopy equivalence identiﬁes spaces which 
+can be deformed continuously into one another without cutting or 
+tearing (e.g., via stretching) ( Munkres, 2018 ). The ﬂexibility of simplicial complexes allows us to create a homotopically equivalent 
+representation of any shape encountered in practice. As we will 
+see, algebraic calculations can be applied to simplicial complexes 
+to quantify the features of the original object ( Hatcher, 20 0 0 ). 
+3.2. Simplicial homology 
+Simplicial homology provides computational techniques to 
+study topological spaces that are represented as simplicial complexes. We make some basic deﬁnitions that are necessary to explain the working principles of these techniques. 
+Deﬁnition 3.3. Simplex Orientation: The orientation of a k simplex is given by the ordering of the vertices in the simplex 
+[ v 0 , v 1 , . . . , v k ] . Two orderings can deﬁne the same orientation if 
+and only if they differ by an even permutation; thus, there are only 
+two allowable orientations of a simplex. 
+An example of the possible orientations of a 2-simplex is shown 
+in Fig. 5 . We can see that only two orientations are possible for this 
+simplex. Here, each oriented simplex is equal to the negative of the 
+simplex with opposite orientation; mathematically, this is stated as 
+[ a, b, c] = −[ b, a, c] . 
+3.3. Cycles, holes, and homology groups 
+In simplicial homology, we want to identify cycles in a given 
+object and we want to know whether a given cycle bounds a collection of higher dimensional simplices (if it does not, then the cycle is a hole). An example of this concept is presented in Fig. 6 ; we 
+see that complex K 1 is a cycle that bounds an empty space which 
+constitutes a hole, while the complex K 2 represents a line with no 
+holes. We now proceed to explore concepts that will allow us to 
+systematically identify the presence of holes and cycles. 
+A simplicial k -chain on a complex K is used in the identiﬁcation 
+of holes in a simplicial complex, and is deﬁned as follows. 
+3 
+
+Fig. 4. (a) A simplicial 2-complex created by connecting a 2-simplex (a triangle) and multiple 1-simplices (edges). This simplicial complex contains one hole. (b) A geometric 
+object (a ring) and its simplicial complex representation using 2-simplices. Both shapes contain an empty hole and are homotopy equivalent. 
+Fig. 5. Possible orientations of a 2-simplex. 
+Fig. 6. Examples of 1-simplicial complexes with the same number of vertices; K 1 contains a hole while K 2 does not. 
+Fig. 7. Visualization of the boundary operation ( ∂ 2 ) applied to a 2-simplex. The 
+boundary operator maps the 2-simplex onto its bounding 1-simplices. The [ a, c] 
+simplex is inverted to retain lexicographical ordering. 
+Deﬁnition 3.4. Simplicial k -chains: A k -chain is a ﬁnite weighted 
+sum deﬁned on all k -simplices within a complex K: 
+N 
+ 
+i =1 
+c i σi 
+(3.2) 
+where c i ∈ Z and N is the number of k -dimensional simplices. The 
+set of k -chains on K is written as C k . Typically, the coeﬃcients are 
+given by c i ∈ {−1 , 0 , 1 } and we recall that a value of −1 inverts the 
+simplex. 
+The boundary operator is a linear operator that maps the k chains of a complex to its boundaries. The boundaries are the associated (k −1) -chains that make up the higher dimensional k -chain. 
+A visualization of the boundary operator is presented in Fig. 7 . 
+Deﬁnition 3.5. Boundary Operator: For a set of k -chains (denoted 
+as C k ) we deﬁne the boundary operator ∂as the mapping: 
+∂ : C k → C k −1 
+(3.3) 
+The boundary operation on a general simplex σ with vertices 
+[ v 0 , v 1 , . . . , v k ] is shown in (3.4) , where the vertex ˆ v i is removed 
+from the set of vertices in the summation. The boundary operation 
+on a k -simplex maps the simplex to a summation of its k −1 faces. 
+∂([ v 0 , v 1 , . . . , v k ]) = 
+k +1 
+ 
+i =0 
+(−1) i [ v 0 , . . . , ˆ v i , . . . , v k ] 
+(3.4) 
+We use the short-hand notation ∂(C k ) = ∂ k to represent a 
+boundary operation. We show an example for a complex K with 
+dim (K) = k in (3.5) ; here, we see that the boundary operator is a 
+mapping from the chains of a higher dimension to chains of lower 
+dimension within the simplicial complex. We also note that the k chain for dimensions greater than k and less than 0 are zero and 
+that the boundary maps ∂ k +1 and ∂ 0 are zero maps. 
+0 
+∂ k +1 
+−−→ C k (K) 
+∂ k 
+−→ C k −1 (K) 
+∂ k −1 
+−−→ . . . ∂ 1 
+−→ C 0 ( K) ∂ 0 
+−→ 0 
+(3.5) 
+As an example, we apply the boundary operator to the simplicial chains in the complexes in Fig. 6 . We note that these complexes are built from sets of 1-simplices; thus, when we apply the 
+boundary operator ∂ 1 , we obtain a set of vertices (0-simplices). 
+The result of the operation on complex K 1 is found in 3.6 , where 
+we invert the orientation of the [ a, c] boundary in order to retain 
+lexicographical ordering: 
+∂ 1 (K 1 ) = ∂([ a, b]) + ∂([ b, c]) −∂([ a, c]) = (a −b) + (b −c) 
+−(a −c) = 0 
+(3.6) 
+4 
+
+Fig. 8. An illustration of the homology group H 1 . (a) z represents a cycle z ∈ Z 1 that is not a boundary ( z / 
+∈ B 1 ), whereas b ∈ Z 1 is a cycle that bounds a 2-simplex ( b ∈ B 1 ). 
+(b) The cycle z is homotopy equivalent to z + b ( z ≃ z + b) and should not be counted as a separate hole. 
+and the operation on the 1-chain in the complex K 2 is: 
+∂ 1 (K 2 ) = ∂([ a, b]) + ∂([ b, c]) = (a −b) + (b −c) = a −c 
+(3.7) 
+This example illustrates how simplicial homology uses basic 
+boundary operations to identify cycles in a complex. We can see 
+that the cycle formed by K 1 is mapped to zero. In simplicial homology, a cycle is deﬁned as a chain that is mapped to the null 
+space or kernel of the boundary operator (denoted as ker(∂) ) and 
+which is zero. With these basic deﬁnitions, we can now formally 
+deﬁne cycles and boundaries . 
+Deﬁnition 3.6. Cycles: The k -dimensional cycles are given by: 
+Z k = ker (∂ k ) 
+(3.8) 
+where ker (∂ k ) is the kernel of the operator ∂ k . 
+Deﬁnition 3.7. Boundaries: The boundaries are given by: 
+B k = im (∂ k +1 ) 
+(3.9) 
+where im (∂ k +1 ) is the image of the operator ∂ k +1 . 
+In summary, the information contained in Z k gives us the cycles of dimension k within a given complex and the information 
+in B k tells us whether or not a cycle is the boundary of a collection of higher dimensional simplices. It is also important to note 
+that B k is a subgroup of Z k . Also, if a cycle is not a boundary, then 
+it is known as a hole . We can summarize this information for any 
+complex by deﬁning the k -homology group H k and the Betti number βk . In simple terms, the H k group contains the unique k -holes 
+within a complex and βk counts the number of unique k -holes in 
+a complex. 
+Deﬁnition 3.8. k -Homology Group: The k -homology group H k is 
+given by the quotient group: 
+H k = Z k /B k . 
+(3.10) 
+We illustrate H k in Fig. 8 ; here, we have two simplicial representations z and b, where z is a cycle that does not bound a 
+higher dimensional simplex (we have z ∈ Z 1 and z / 
+∈ B 1 ) while b
+does bound a higher dimensional simplex (we have b ∈ B 1 and 
+b ∈ Z 1 as B 1 ⊆Z 1 ). We can also see that both z and z + b contain 
+the same hole and thus they are homologically equivalent (their 
+difference is a boundary). The homology group H k formally deﬁnes 
+this concept and states that, if a cycle z 1 = z 2 + B k and z 1 , z 2 ∈ Z k , 
+then the two cycles are equivalent z 1 ≃ z 2 and are not independent 
+elements of the group ( H k ). This logic prevents counting the same 
+topological feature multiple times. 
+Before we can formally deﬁne Betti numbers, we must deﬁne 
+the rank of a group. 
+Deﬁnition 3.9. Group Rank: We deﬁne the rank (Z) of a group Z
+as: 
+rank (Z) = min {| Y | : Y ⊆Z, ⟨ Y ⟩ = Z} 
+(3.11) 
+where | Y | represents the cardinality of set Y and ⟨ Y ⟩ represents 
+the subgroup of Z generated by elements of Y . 
+We will see that the rank of a group is analogous to the notion 
+of the rank of a matrix (or to the dimension of a vector space). 
+Speciﬁcally, it identiﬁes the number of independent basis elements 
+(known as generators) of a group. With this in mind, we deﬁne the 
+k th -Betti number as follows. 
+Deﬁnition 3.10. k th -Betti Number: The k th -Betti number βk is the 
+rank of H k and is given by: 
+βk = rank (H k ) = rank (Z k ) −rank (B k ) 
+(3.12) 
+We illustrate these concepts using the complex K 1 presented 
+in Fig. 6 . This complex presents a hole; performing the necessary 
+computations to obtain Z 1 and B 1 for K 1 we ﬁnd that: 
+Z 1 (K 1 ) = { (a, b) + (b, c) −(a, c) } 
+(3.13a) 
+B 1 (K 1 ) = { 0 } 
+(3.13b) 
+We now perform the quotient operation to obtain H 1 and β1 
+for K 1 : 
+H 1 (K 1 ) = { (a, b) + (b, c) −(a, c) } / { 0 } = { (a, b) + (b, c) −(a, c) } 
+(3.14a) 
+β1 (K 1 ) = rank ({ (a, b) + (b, c) −(a, c) } ) = 1 
+(3.14b) 
+We see that the H 1 group identiﬁes the 1-dimensional holes 
+within the complex, and β1 counts the number of 1-dimensional 
+holes in the complex. The same is true for all other dimensions 
+k ≥0 as long as dim (K) ≥k because H k = 0 for all k > dim (K) . 
+This concept becomes familiar when viewed from the perspective 
+of linear algebra and matrices. One can consider the H k group similar to the basis vectors for a given matrix, where in this case H k 
+deﬁnes the topological basis for a given shape and the Betti numbers ( βk ) correspond to the rank of these bases and can be seen as 
+the total number of unique topological features. The main difference is that for a given shape there can be multiple sets of topological bases for each dimension of the shape. The goal of TDA is to 
+identify and compare the topological bases for each shape, similar 
+to how one might compare the structure of matrices based upon 
+their basis vectors and corresponding rank. 
+3.3.1. The 0 th homology group ( H 0 ) 
+The 0 th homology group H 0 plays an important role in topological analysis. H 0 is the measure of the number of connected components in a complex. A component (or subcomplex ) is deﬁned as 
+follows. 
+Deﬁnition 3.11. Subcomplex: A subcomplex is a subset S of a 
+complex K such that S is also a complex. 
+5 
+
+Fig. 9. Example complexes with different number of connected components. K 3 has two connected components and K 4 has a single connected component. 
+Deﬁnition 3.12. Connected complex: A complex is connected if 
+there exists a path made of 1-simplices from any vertex of the 
+complex to any other vertex. 
+The group H 0 describes how many disconnected subcomplexes 
+S there are within a given complex K. A simple example is shown 
+in Fig. 9 ; here, we note that the ﬁrst complex K 3 has two disjoint 
+subcomplexes, and the second complex K 4 has a single connected 
+component. The calculations for K 3 are given by: 
+H 0 (K 3 ) = { a, b, c, d} / { (a −b) , (c −d) } 
+(3.15a) 
+β0 (K 3 ) = 2 
+(3.15b) 
+and for K 3 are: 
+H 0 (K 4 ) = { a, b, c, d} / { (a −b) , (b −c) , (c −d) } 
+(3.16a) 
+β0 (K 4 ) = 1 . 
+(3.16b) 
+4. Computational methods for TDA 
+Now that we have developed a basic understanding of simplicial homology, we can begin to streamline computations through 
+the tools of numerical linear algebra. In order to simplify our discussion, we will deﬁne a new k -chain where the coeﬃcients c i ∈ Z 2 
+where Z 2 is the group of binaries { 0 , 1 } (rather than c i ∈ Z ), for 
+which 1 + 1 = 0 . With this new deﬁnition, we can remove the need 
+for deﬁning an orientation on a simplicial complex. In (4.17a) –
+(4.17c) , we see that computational results are the same as those 
+for the example provided in (3.6) . 
+C 1 (K 1 ) = [ a, b] + [ b, c] + [ a, c] 
+(4.17a) 
+∂ 1 (K 1 ) = ∂([ a, b]) + ∂([ b, c]) + ∂([ a, c]) 
+= (a + b) + (b + c) + (a + c) 
+(4.17b) 
+∂ 1 (K 1 ) = (1 + 1) a + (1 + 1) b + (1 + 1) c = 0 + 0 + 0 = 0 (4.17c) 
+We can now couple the newly deﬁned k -chain with the boundary operator to create what is known as a boundary matrix B ∈ 
+Z n ×m 
+2 
+where n represents the simplices of dimension (k −1) in K
+and m represents the simplices of dimension k in K. The boundary 
+matrix is built based on the following rules: 
+• The face of a simplex precedes the simplex in column (row) 
+index. 
+• An entry of one is placed in position ( j, i ) if σi is a face of σ j , 
+otherwise it is zero. 
+• If two simplices are of the same dimension, lexicographic ordering is used (i.e., [ a, b] < [ a, c] < [ b, c]) . 
+Table 1 
+Boundary matrix B 0 for ∂ 0 of complex 
+in Fig. 4 a. 
+∂ 0 
+[a] 
+[b] 
+[c] 
+[d] 
+[e] 
+0 
+0 
+0 
+0 
+0 
+0 
+Table 2 
+Boundary matrix B 1 for ∂ 1 of complex in Fig. 4 a. 
+∂ 1 
+[a,b] 
+[a,c] 
+[a,d] 
+[b,c] 
+[b,d] 
+[d,e] 
+[a] 
+1 
+1 
+1 
+0 
+0 
+0 
+[b] 
+1 
+0 
+0 
+1 
+1 
+0 
+[c] 
+0 
+1 
+0 
+1 
+0 
+0 
+[d] 
+0 
+0 
+1 
+0 
+1 
+1 
+[e] 
+0 
+0 
+0 
+0 
+0 
+1 
+Table 3 
+Boundary matrix B 2 for ∂ 2 of complex 
+in Fig. 4 a. 
+∂ 2 
+[a,b,c] 
+[a,b] 
+1 
+[a,c] 
+1 
+[b,c] 
+1 
+[b,d] 
+0 
+[d,e] 
+0 
+For example, we take complex in Fig. 4 a and compute the H 1 
+group. We show matrix B for ∂ 0 in Table 1 , for ∂ 1 in Table 2 , and 
+for ∂ 2 in Table 3 . Again, the boundary matrix associated with ∂ 1 
+is mapping the 1-simplices of the complex to its boundaries and 
+similarly for ∂ 2 . 
+In order to compute rank (Z j ) and rank (B j ) and the number of 
+k -holes in the complex (the Betti number βk ), we must ﬁrst reduce 
+the matrices to a canonical form known as the Smith normal form 
+(SNF). 
+Deﬁnition 4.1. Smith Normal Form: A matrix M ∈ Z n ×m 
+2 
+is in Smith 
+normal form if it is diagonal and if it can be obtained by multiplying M by invertible matrices S ∈ Z n ×n 
+2 
+and T ∈ Z m ×m 
+2 
+as M SNF = 
+SMT . 
+The reduced matrix B 1 SNF is shown in Table 4 and B 2 SNF is 
+shown in Table 5 . The ∂ 0 matrix cannot be further reduced and 
+thus it is not shown. The SNF matrices contain all the information 
+required to ﬁnd rank (Z k ) and rank (B k ) for k ∈ { 1 , 2 } : 
+rank (Z k ) = m −rank ( B (k ) SNF ) 
+(4.18a) 
+rank (B k ) = rank ( B (k + 1 ) SNF ) 
+(4.18b) 
+These simple calculations show us that rank (Z 1 ) = 2 and 
+rank (B 1 ) = 1 . From this we can see that the number of 1-holes in 
+our complex is β1 = rank (Z 1 ) −rank (B 1 ) = 1 , as expected. 
+6 
+
+Table 4 
+Reduced boundary matrix B 1 
+SNF for ∂ 1 of the simplicial 
+complex in Fig. 4 a. We note that the matrix is not diagonal in order to retain lexicographical ordering, but can 
+be easily made diagonal. 
+∂ 1 
+[a,b] 
+[a,c] 
+[a,d] 
+[b,c] 
+[b,d] 
+[d,e] 
+[a] 
+1 
+0 
+0 
+0 
+0 
+0 
+[b] 
+0 
+1 
+0 
+0 
+0 
+0 
+[c] 
+0 
+0 
+1 
+0 
+0 
+0 
+[d] 
+0 
+0 
+0 
+0 
+0 
+1 
+[e] 
+0 
+0 
+0 
+0 
+0 
+0 
+Table 5 
+Reduced boundary matrix B 2 
+SNF for ∂ 2 of 
+the simplicial complex in Fig. 4 a. 
+∂ 2 
+[a,b,c] 
+[a,b] 
+1 
+[a,c] 
+0 
+[b,c] 
+0 
+[b,d] 
+0 
+[d,e] 
+0 
+Fig. 10. A cover of points x i ∈ X is deﬁned by a set of balls B (x i , ϵ) expanded 
+around each point. 
+5. Persistent homology 
+Persistent homology is a methodology originally proposed by 
+Edelsbrunner, Letscher, and Zomorodian and further developed by 
+many others for extracting and quantifying topological information from data ( Edelsbrunner et al., 20 0 0 ). This methodology is 
+discussed in detail in ( Zomorodian and Carlsson, 2005; Bauer and 
+Lesnick, 2014; Chazal et al., 2012; Carlsson, 2009; Cohen-Steiner 
+et al., 2007; Ghrist, 2008 ). The homology of data provides deep 
+insight into the structure of the data and quantiﬁcation capabilities of their geometric features ( Ghrist, 2008; Cohen-Steiner et al., 
+2007 ). 
+5.1. Building simplicial complexes from data 
+Direct computation of the homology of an arbitrary set deﬁned 
+by the space X ⊂R n is a complex task. To simplify this task, we 
+leverage simplicial homology; here, we identify a simplicial complex K such that its homology is the same or similar to that of X . 
+We can deﬁne such a complex K by creating a geometric object 
+known as the cover ( U) of X . 
+Deﬁnition 5.1. Cover: U = { U i } i ∈ I is a cover of a metric space X if 
+X ⊆ 
+i ∈ I 
+U i . 
+If we deﬁne our metric space ( X ) to be a ﬁnite set of points 
+in R n , then we can imagine each set U i to be a ball { B (x i , ϵ) : x i ∈ 
+X , ϵ ∈ R + } centered around each point x i ∈ X , where ϵ is the ball 
+radius. An example of such a cover is presented in Fig. 10 . We now 
+utilize this cover to develop a simplicial complex, known as a ˇCech 
+complex . 
+Deﬁnition 5.2. ˇCech Complex: The ˇCech Complex ( ˇC ) is a simplicial complex built from k -simplices that are the non-empty intersection of k +1 sets of a cover U. 
+A ˇCech complex is also known as the “nerve” of the cover U. 
+Deﬁnition 5.3. Nerve: The nerve of collection U = ∪ i ∈ I { U i } is the 
+simplicial complex with vertices I and k -simplices built from 
+{ i 0 , i 1 , . . . , i k } if and only if U i 0 ∩ U i 1 ∩ . . . ∩ U i k ̸ = ∅ . 
+By using the so-called “Nerve Theorem” construction, we can 
+build a simplicial complex K for space X = ∪ i ∈ I { U i } . Under certain 
+assumptions, the simplicial complex K and the space X are homotopy equivalent ( Alexandroff, 1928; Ghrist, 2014 ). With this, we 
+can apply the calculations and analysis of simplicial homology directly to our data. However, there is one caveat that is important 
+to note, which is the selection of the distance ϵ. An example of the 
+the nerve of a dataset with varying levels of ϵ is shown in Fig. 11 . 
+We can see that, as we adjust ϵ of the cover U, we obtain different ˇCech complexes, each with a different homology. We want to 
+ensure that the homology captures the most interesting features 
+of the data. In the complex shown in Fig. 11 , these features are the 
+two clusters of points; here, one cluster forms a loop and the other 
+does not. It is easy to see in this example what range of ϵ values 
+would be most effective at capturing this information. However, if 
+our dataset is of much higher dimension, ﬁnding the correct ϵ is 
+much more diﬃcult. Consequently, we characterize the dataset for 
+multiple values of ϵ. This information is captured by a ﬁltered simplicial complex ( Carlsson, 2009 ). 
+Deﬁnition 5.4. Filtered Simplicial Complex: A ﬁltered simplicial 
+complex K ∈ R m is a simplicial complex for which there is a series of nested simplicial subcomplexes K ϵ ∈ R m such that: 
+K ϵ0 ⊂K ϵ1 ⊂. . . ⊂K ϵn 
+(5.19) 
+where ϵ0 < ϵ1 < . . . < ϵn . 
+Referring back to the example in which we deﬁne the cover U
+as a set of balls B (x i , ϵ) of radius ϵ, we can view the ﬁltered complex as the set of nerve complexes that are formed as we expand 
+ϵ. Fig. 11 demonstrates that for the ﬁltration of nerve complexes 
+K ϵ=0 ⊂K ϵ=1 ⊂K ϵ=3 ⊂K ϵ=5 . Note that the interesting features of 
+the data (the two clusters and one loop) are present in the homology of the subcomplexes and persist during a large portion of the 
+ﬁltration. The main goal of this analysis is to identify persistence 
+intervals in the complex ﬁltered by ϵ. Given a topological feature 
+present in a ﬁltration, we identify the value of ϵ where the feature 
+is born (appears) and dies (disappears). 
+Deﬁnition 5.5. Birth: For a ﬁltered complex K and subcomplexes 
+K i , K j where i < j. A topological feature x ∈ H p (K j ) is born at j if 
+x / 
+∈ H p (K i ) . 
+Deﬁnition 5.6. Death: For a ﬁltered complex K and subcomplexes 
+K i , K j where i < j. A topological feature x ∈ H p (K i ) dies at j if x / 
+∈ 
+H p (K j ) . A feature will also die if the feature merges with a feature 
+born earlier in the ﬁltration, this is known as the elder rule . 
+Deﬁnition 5.7. Persistence Interval: For a given topological feature 
+x with birth point i and death point j, the persistence interval ( Int ) 
+for the feature is given by: 
+Int = [ i, j) : i, j ∈ ¯R 
+(5.20) 
+If j = ∞ then the component does not die during the ﬁltration 
+(persists forever). 
+With a ﬁltration we are identifying the appearance and disappearance of topologically interesting features in our dataset. The 
+ﬁltered complex in Fig. 11 demonstrates this concept. We can see 
+that the hole in the dataset is born at ϵ = 3 and is completely ﬁlled 
+7 
+
+Fig. 11. Filtration of points x i ∈ X by a set of balls B (x i , ϵ) with expanding ϵ. As ϵ is increased the topology of the ˇCech complex evolves and this introduces holes and 
+higher dimensional simplices. This ﬁltration builds a ﬁltered simplicial complex ( K ϵ=0 ⊂K ϵ=1 ⊂K ϵ=3 ⊂K ϵ=5 ). 
+Fig. 12. Filtration of points x i ∈ X by a set of balls B (x i , ϵ) with expanding ϵ and its corresponding persistence diagram. The PD records the ϵ value at which topological 
+features are born and the ϵ value of their death during the ﬁltration. For example, the cycle born at ϵ = 3 ( x = 3 ) dies at ϵ = 5 ( y = 5 ) when it is ﬁlled in, with a total 
+persistence of 5 −3 = 2 , which is seen in the PD. 
+in at ϵ = 5 , persisting for a majority of the ﬁltration. We can also 
+see that the individual points (at ϵ = 0 ) become two connected 
+components at ϵ = 3 and then become a single component a ϵ = 5 . 
+Thus, the longest persistence intervals in both H 1 and H 0 capture 
+the deﬁning topological characteristics of the ﬁltered complex. 
+5.2. Persistence diagrams 
+The information about topological features contained within 
+a ﬁltered complex is summarized into what is known as a persistence diagram (PD) ( Edelsbrunner et al., 20 0 0 ). This can be 
+computed via an extension of the matrix methods presented in 
+Section 4 ( Edelsbrunner and Harer, 2010 ). The PD is a visual 
+method that represents the birth ( x ) and death ( y ) of topological 
+features as a set of points in R 2 . The persistence diagram associated with the ﬁltration in Fig. 11 is shown in Fig. 12 . This diagram 
+represents the birth and death of the features of the H 0 and H 1 
+homology groups for the ﬁltered complex. The persistence interval 
+associated with each feature is the vertical line segment between 
+the persitence point and the diagonal. This information allows for 
+a direct visual understanding of the topology of the dataset. 
+An important property of PDs is that they can be vectorized to 
+enable quantiﬁcation and these vectors can be used to perform 
+tasks such as regression, classiﬁcation, or clustering. For instance, 
+as we will see in Section (6) , one can apply PCA to the vectorized 
+PDs to identify clusters deﬁned by different topological features. 
+Deﬁnition 5.8. Vectorization: A persistence diagram P D X i of a 
+dataset X i is vectorized by mapping the P D X i to a vector −→ 
+P D X i ∈ R q . 
+There are multiple ways to vectorize a PD, the most widely 
+used mappings are the persistence landscape ( Bubenik and Dłotko, 
+2017; Bubenik, 2015 ) and the persistence image ( Adams et al., 2017 ) 
+(we will focus on the latter). The persistence image is a smoothed 
+representation of the points ( x, y ) in a persistence diagram (x, y ) ∈ 
+P D . Typically, the smoothing is done by applying a Gaussian kernel 
+(with mean u and variance σ 2 ) to each of the points (x, y ) ∈ PD : 
+φ(x, y ) = 
+1 
+2 πσ 2 exp −(x −u x ) 2 + (y −u y ) 2 
+σ 2 
+(5.21) 
+Deﬁnition 5.9. Persistence Surface: The persistence surface is a 
+scalar mapping ρ : R 2 → R with weighting function w : R 2 → R 
+and is deﬁned as: 
+ρ(P D ) = 
+ 
+u ∈ PD 
+w (u ) φ(u ) 
+(5.22) 
+A persistence image is the discretization of the persistence surface . 
+Deﬁnition 5.10. Persistence Image: For a given PD, a persistence 
+image of size n by m is a collection of pixels supported in a rectangle R = [ a, b] × [ c, d ] . The ( i, j ) pixel p i, j , is the area [ a + i −1 
+n (b −
+a ) , a + i 
+n (b −a )] × [ c + j−1 
+m (d −c) , c + j 
+m (d −c)] . 
+−→ 
+ρ [ i, j] = 
+  
+p i,j 
+ρdxdy 
+(5.23) 
+The ultimate goal of vectorization methods is to create a stable 
+representation of the PD. 
+Deﬁnition 5.11. Stability: A vector representation −→ 
+P D X i of a persistence diagram P D X i is said to be stable if small perturbations in 
+P D X i (represented as P D ′ 
+X i ) results in a bounded change in −→ 
+P D ′ 
+X i . 
+Mathematically, we establish the stability property as: 
+dist ( −→ 
+P D X i , −→ 
+P D ′ 
+X i ) ≤L · dist (P D X i , P D ′ 
+X i ) 
+(5.24) 
+where dist(·, ·) represents a distance metric and L represents a 
+scalar constant. The distance between PDs is commonly measured 
+8 
+
+Fig. 13. Morse ﬁltration of a function f : R → R . Consider a sublevel set f −1 (−∞ , b) for increasing values of b. The topology of these sublevel sets changes at the critical 
+points of f. As b increases the value of the sublevel set, the persistence diagram records the topological changes in the function. 
+using the Wasserstein distance or the bottleneck distance . Whereas 
+the distance between the vectorized PDs ( −→ 
+P D ) can be expressed in 
+terms of l p norms. 
+Deﬁnition 5.12. Wasserstein distance: The p th - Wasserstein distance 
+between persistence diagrams P D 1 and P D 2 is deﬁned as: 
+d W p (P D 1 , P D 2 ) = 
+ 
+inf 
+γ
+ 
+x ∈ PD 1 
+|| x −γ (x ) || p 
+∞ 
+ 1 /p 
+(5.25) 
+where γ ranges over all possible bijections from P D 1 to P D 2 . By 
+convention, we add an inﬁnite number of points in the diagonal to 
+allow for bijections between PD’s containing different numbers of 
+points. 
+Deﬁnition 5.13. Bottleneck distance: The bottleneck distance between persistence diagrams, P D 1 and P D 2 , is deﬁned as: 
+d B (P D 1 , P D 2 ) = inf 
+γ sup 
+x || x −γ (x ) || ∞ 
+(5.26) 
+where γ ranges over all possible bijections from P D 1 to P D 2 with 
+the same considerations made in the Wasserstein distance deﬁnition. 
+Notably, it has been proven that persistence landscapes and persistence images are stable under the appropriate distances ( Bubenik 
+and Dłotko, 2017; Bubenik, 2015; Adams et al., 2017 ). Intuitively, 
+stability indicates that topology changes in a continuous manner 
+under perturbations. This makes them excellent representations of 
+PDs and amenable to use in diverse tasks such as regression and 
+classiﬁcation, as we demonstrate in Section 6 . 
+5.3. Topology of continuous functions 
+In the previous sections we focus on understanding the topology of datasets that are made of point clouds. We now discuss how 
+to quantify the topology of continuous functions. An example of 
+this type of object is the scalar function shown Fig. 13 . Topologically, the interesting features of this function are its critical points 
+(e.g., local minima and maxima). In order to characterize these critical points we utilize a new form of ﬁltration known as a Morse ﬁltration or sublevel set ﬁltration ( Mischaikow and Nanda, 2013 ). The 
+Morse ﬁltration is derived from ideas of Morse theory, which is 
+the study of the topology of manifolds through differential functions and the analysis of the critical points of these functions 
+( Milnor et al., 1969 ). Here, we consider the graph of a continuous 
+function as a differentiable manifold ( Poincaré, 1895 ). 
+Deﬁnition 5.14. Level Set: Given a differentiable manifold M and 
+function f : M → R , the level set M a at a point a is deﬁned as the 
+pre-image: 
+M a = f −1 (a ) = { x ∈ M : f(x ) = a } . 
+(5.27) 
+The level set contains all points of the manifold that have the 
+same function value. In order to create a ﬁltration, we use a sublevel set deﬁned below. 
+Deﬁnition 5.15. Sublevel Set: A sublevel set M (a,b) , where a, b ∈ ¯R 
+and a = −∞ is deﬁned as: 
+M (−∞ ,b) = { x ∈ M : f(x ) ≤b} . 
+(5.28) 
+As we pass through the Morse ﬁltration and build the sublevel 
+set of the function, we are creating a well-deﬁned ﬁltered complex. The topology of the function will change as the ﬁltration 
+passes through critical points in the manifold ( Mischaikow and 
+Nanda, 2013 ). These topological changes are quantiﬁed in a persistence diagram which is subsequently vectorized for analysis. An 
+example of this type of ﬁltration and the corresponding persistence 
+diagram are shown in Fig. 13 . The Morse ﬁltration is a good choice 
+for functions that are continuous or that can be approximated as 
+piece-wise linear functions (e.g., a time series). The method can 
+be expanded to k -dimensional functions ( Günther et al., 2012 ). 
+This makes it a powerful approach to characterize complex surfaces (landscapes) that have many minima/maxima. We demonstrate this technique on 2D and 3D functions in Section 6 . 
+5.3.1. Stability of persistence diagrams for functions 
+Persistence diagrams of real valued functions are also stable representations of data. The following Theorem 1 , established 
+by Cohen-Steiner and co-workers, highlights this result ( Cohen- 
+Steiner et al., 2007 ). 
+Theorem 1. Given real valued functions f, g with ﬁnitely many critical points and their corresponding persistence diagrams P D f , P D g , we 
+have that: 
+d B (P D f , P D g ) ≤|| f −g|| ∞ 
+(5.29) 
+where || · || ∞ represents the l ∞ distance between two functions f, g : 
+X → R : 
+|| f −g|| ∞ = sup {|| f(x ) −g(x ) || : x ∈ X } . 
+(5.30) 
+An illustration of the stability of persistence diagrams is shown 
+in Fig. 14 . Here, we can see that the persistence diagrams of the 
+two functions are similar. The presence of the strong critical points, 
+with large persistence, are well captured in both diagrams. We can 
+also see that the persistence diagram captures the structure of the 
+weak critical points (arising from noise), which have short persistence. 
+9 
+
+Fig. 14. Filtration of functions f(x ) and ˆ 
+f (x ) . The strong critical points of both functions are captured in the persistence diagram analysis while the weak critical points 
+(arising from noise) remain close to the diagonal as they have minimal persistence. 
+5.4. Cubical complexes and images 
+We brieﬂy discuss cubical complexes and cubical homology as 
+these are important in understanding data over rectangular domains such as images (represented by pixels in 2D or voxels in 
+3D) and are used primarily in Morse ﬁltrations ( Allili et al., 2001; 
+Niethammer et al., 2002 ). Cubical homology is similar to simplicial 
+homology but uses different basis shapes. This highlights the fact 
+that one can choose different basis shapes in topological analysis. 
+The basis shapes for cubical complexes are k -cubes (hypercubes) 
+or elementary cubes built from sides of equal length. In Fig. 15 a 
+we show k -cubes of dimension 0 through 3. An example cubical 
+complex is found in Fig. 15 b. 
+Filtered cubical complexes can be developed from data and we 
+can perform persistence homology calculations on them, similar 
+to ﬁltered simplicial complexes. An important application of cubical analysis is the analysis of images. An image can be viewed 
+as a 2D surface embedded in three dimensions where two dimensions are the coordinates of each pixel, and the third dimension is the scalar value associated with each pixel (e.g., intensity). 
+We can also view an image as an approximation of a continuous object over which a Morse ﬁltration can be performed. We 
+demonstrate the concept of ﬁltration on the image in Fig. 16 a. 
+We ﬁlter through the level sets of this image and develop the ﬁltered complex through the sublevel set. This ﬁltration is demonstrated in Fig. 16 b, where C f≤1 ⊆C f≤3 ⊆C f≤5 . The persistence diagram is then represented in Fig. 17 . The PD is able to capture 
+the dominant topological features of our image such as the presence of the two critical points in the image and the fact that 
+there is only a single connected component. The persistence diagram generated from a cubical complex ﬁltration and a simplicial 
+complex ﬁltration have the same properties and can be vectorized 
+in the same way. Thus, we can extend our analysis from discrete 
+point data to that of images or other high-dimensional continuous 
+objects. 
+5.5. Inverse analysis 
+The algorithm to compute persistence homology allows us, for 
+each point in a persistence diagram, to identify representative features in the ﬁltration. The intuition behind this idea is presented in 
+Fig. 18 . However, before we discuss this procedure along with an 
+appropriate post-processing step, a few issues need to be clariﬁed. 
+The persistence algorithm will provide a set of cycles that generate 
+a persistent homology group. However, it will not necessarily be 
+the set that is close to what we may call geometrically optimal generators . A similar problem can occur when identifying an optimal 
+basis for a vector space. For example, let us consider the R 2 space 
+and various possible bases for this space presented below. 
+B 1 = 
+
+1 
+0 
+	
+, 
+
+0 
+1 
+	
+, B 2 = 
+
+1 
+1 
+	
+, 
+
+0 
+10 
+	
+, B 3 = 
+
+123 
+21 
+	
+, 
+
+2121 
+1243 
+	
+. 
+B 1 , B 2 and B 3 are all valid bases of R 2 and they can be mapped to 
+each other via multiplication by a non-singular matrix. Yet, only B 1 
+can be called geometrically optimal as it is the natural representation of the space. 
+We now illustrate, with a simple example, how this issue 
+manifests itself when selecting a basis for a persistent homology 
+group. The cubical complex presented in Fig. 19 contains two holes 
+( h 1 , h 2 ). Cycles g 1 and g 2 surrounding h 1 and h 2 are generators 
+(they form a basis) for the ﬁrst homology group of this shape. They 
+are the optimal geometric representation of these holes. Let G b1 be 
+the basis made up of these two cycles. The second basis G b2 contains cycles g ′ 
+1 and g ′ 
+2 . They are a perturbed version of cycles g 1 
+and g 2 , as g 1 ≃ g ′ 
+1 and g 2 ≃ g ′ 
+2 , but are not geometrically optimal. 
+Lastly, let us consider a basis G b3 . It generates the ﬁrst homology group of our shape, but it is a non-optimal basis for the holes 
+because there is no unique correspondence between cycles and 
+holes. G b3 and G b1 can be transformed into each other by multiplication of a nonsingular matrix (change of basis). 
+G b1 = 
+
+g1 
+0 
+0 
+g2 
+	
+, G b2 = 
+
+g1 ′ 
+0 
+0 
+g2 ′ 
+	
+, G b3 = 
+
+g1 
+0 
+g2 
+2 g2 
+	
+The persistent homology algorithm may return non-optimal bases, 
+like G b3 . There is not much that can be done to ﬁx this issue in 
+general. However, there is a way of ﬁnding the most optimal generators within their homology class. This will allow, for instance, 
+the simpliﬁcation of G b2 into G b1 . In order to address the problem of non-optimal generators, we construct an integer optimization problem to obtain the sparsest representation of a given generator. We begin this optimization with the representative cycle c
+obtained from the persistence algorithm and identify the sparsest 
+chain of simplices from the homology class of c. For example, in 
+Fig. 18 , we wish to identify the basis (generator) for the persistent 
+cycle identiﬁed in green. We construct a simpliﬁed representation 
+for the dataset in Fig. 18 where K ϵ represents the associated simplicial complexes with the speciﬁed level of ﬁltration. Because we 
+know the cycle is born at ϵ = 3 and dies at ϵ = 5 we only focus on 
+the portion of the ﬁltration up to the level ϵ = 5 . Given the simplices below that ﬁltration level, we wish to identify the sparsest 
+set of 1-simplices z =  
+i σi , where σi ∈ K, that is homologous to 
+the generator c. We denote || z|| 0 as the cardinality of z. 
+With this information, we construct an integer optimization formulation, found in (5.31) , where we seek to identify the sparsest 
+set of simplices z ∈ K ϵ< 5 that is homologous to the cycle c obtained from persistent homology computations. In Fig. 20 we identify multiple cycles ( z 1 , z 2 ∈ K ϵ< 5 ), and note that z 1 = z because 
+|| z 1 || 0 < || z 2 || 0 . 
+z = argmin || z|| 0 , subject to z ≃ c 
+(5.31) 
+Inverse analysis can be used to understand dominant features 
+that drive classiﬁcation and regression results. For instance, the 
+deﬁning characteristics of a given class within a dataset can be 
+identiﬁed via the weights of regression/classiﬁcation models in the 
+space of PDs (see Section 6 ). These deﬁning characteristics can 
+then be mapped back to the original data set which can be used to 
+gain physical understanding of differences between datasets. Applications of these methods in material science are found in ( Buchet 
+et al., 2018; Nakamura et al., 2015; Ichinomiya et al., 2017 ). Here, 
+inverse analysis is used to identify fracture or degradation sites in 
+materials and to identify pore conﬁgurations in granular crystallization. 
+6. Applications 
+We now proceed to demonstrate how these methods can be applied to different types of datasets. To do so, we use illustrative 
+10 
+
+Fig. 15. (a) Representations of the elementary k -cubes of dimension 0 to dimension 3. (b) A 2-cubical complex that contains a 2-cube, along with a hole created by 1-cubes. 
+Fig. 16. (a) Representation of an image; the values within each pixel represent intensity. (b) The representative ﬁltration on the image itself and the corresponding sublevel 
+sets. 
+Fig. 17. Persistence diagram for the ﬁltration of the image in Fig. 16 a. The PD reveals the structure of the image,which changes at the critical points of the image (i.e., f = 3 
+and f = 5 .) 
+Fig. 18. Inverse mapping of the features of persistence diagram to the features dataset in Fig. 12 . The features of interest are picked up within the persistence diagram; In 
+this case they are the highly persistent hole and connected component. The inverse mapping for the selected point in one dimensional persistence identiﬁes the dominant 
+loop in the dataset and the inverse mapping for the selected point in zero dimensional persistence identiﬁes the two most distinct clusters of the data. 
+11 
+
+Fig. 19. A representation of a cubical complex with two holes. (left) Cycles g 1 and g 2 are an optimal representation of holes ( h 1 , h 2 ) as they trace each hole. Cycles g ′ 
+1 
+and g ′ 
+2 also represent these holes, but are not geometrically optimal. (right) Another set of generators for the holes ( h 1 , h 2 ) that are not optimal as they represent linear 
+combinations of the cycles g 1 and g 2 . 
+Fig. 20. A representation of potential simplicial complexes that are homotopy equivalent ( ≃ ) to the ﬁltration complex ( K) . The complex z 1 contains the fewest number of 
+1-simplices, thus is the optimal representation of the cycle contained in K ϵ< 5 . 
+Fig. 21. Types of point clouds analyzed using epsilon ball ﬁltration. 
+examples and datasets derived from soft materials and molecular dynamics simulations. All the calculations presented were conducted in Python ( Oliphant, 2007 ) using the TDA packages GUDHI 
+( Maria et al., 2014 ) and Homcloud ( Obayashi, 2020(@ ). All scripts 
+and data needed to reproduce these results can be found in https: 
+//github.com/zavalab/ML/tree/master/TDApaper . 
+6.1. Topology of point clouds 
+We illustrate how to use TDA to analyze point clouds; speciﬁcally, we seek to extract topological features from the data to perform binary classiﬁcation of point clouds. The clouds used here 
+are collections of points in two dimensions x 1 , x 2 (for visualization 
+purposes). Practically, one can conduct analysis on a point cloud of 
+any dimension. We represent each cloud as X i where each cloud 
+can belong to two different types of classes (Class 1 or Class 2). 
+Our goal is to take each point cloud X i as an input, project this data 
+to their respective H 1 persistence diagram P D X i through an epsilon 
+ball ﬁltration (i.e., extract the topological features), vectorize the 
+PDs ( −→ 
+P D X i ∈ R q ), and perform classiﬁcation of the cloud based on 
+the vectorized topological features. 
+The point cloud classes are shown in Fig. 21 and the H 1 PDs 
+are found in Fig. 22 . Note how the point clouds of Class 1 deﬁne a 
+simple object (ellipse) while those of Class 2 deﬁne a more complex object (overlapping ellipses). We can see that the persistence 
+diagrams are visually distinct; speciﬁcally, point clouds of Class 2 
+have features that persist over a longer range of the ﬁltration. 
+We utilize the persistence image method to vectorize the PDs. 
+We apply principal component analysis (PCA) to the vectorized PDs 
+to verify if there is a separation between Class 1 and Class 2. We 
+emphasize that the PCA projection is not applied to the original 
+datasets X i but to the transformed datasets −→ 
+P D X i obtained from 
+TDA. The PCA projection on ﬁrst and second principal components 
+is shown in Fig. 22 c. This shows an obvious separation between 
+Class 1 and Class 2, which means that the topological features extracted from the data (contained in H 1 ) are informative. This also 
+suggests that a simple linear classiﬁer using vectorized PDs as features should work well. To test this hypothesis, we apply a linear 
+support vector machine (SVM) classiﬁer using the −→ 
+P D X i as features; 
+we ﬁnd that we can perfectly classify the datasets (we use a 5-fold 
+12 
+
+Fig. 22. Persistence diagrams for Class 1 and Class 2 point clouds and the corresponding PCA analysis on the set of persistence images created from Class 1 and Class 2. (a) 
+H 1 persistence diagram for Class 1. (b) H 1 persistence diagram for Class 2. (c) Principal components of persistence images for Class 1 and Class 2 datasets. It is clear that 
+there is separation of the persistence diagrams. 
+Fig. 23. Masks highlight the areas of the PD that are important in distinguishing Class 1 from Class 2. We perform inverse analysis on these areas to visualize what features 
+of the original data distinguish these classes. (a) Weights from SVM classiﬁcation in the space of PDs. The areas of the diagram that distinguish Class 2 are in red and the 
+areas of the diagram that distinguish Class 1 are in blue. (b) PD mask for Class 1. (c) PD mask for Class 2. 
+cross validation scheme). This again indicates that the topological 
+features extracted with TDA are highly informative. 
+An advantage of using a linear classiﬁer is the ability to extract 
+the features that best achieve high classiﬁcation accuracies. Specifically, the magnitude of the the SVM classiﬁer weights w ∈ R q can 
+be directly associated with the importance of each feature of the 
+vectorized PDs ( Smith et al., 2020 ). Weights with a large negative 
+value are characteristic of point clouds in Class 1 and weights with 
+a large positive value are characteristic of point clouds in Class 2. 
+A visualization of the weights is shown in Fig. 23 a. From this representation, we can see that Class 1 is characterized by 1-D holes 
+that are born and die in the early stages of the ﬁltration suggesting a higher number of small radius holes. Class 2 is characterized 
+by 1-D holes that persist over multiple stages of the ﬁltration, suggesting the presence of holes with large radius. These results highlight how we can exploit topological information obtained with 
+TDA to perform statistical (PCA) or machine learning tasks (SVM 
+classiﬁcation). 
+Work conducted on the inverse analysis of PDs has led to the 
+development a set of techniques that are useful in the interpretation of PDs ( Obayashi, 2018 ). These techniques allow for the identi- 
+ﬁcation of volume-optimal cycles, which are cycles that correspond 
+to the sparsest representation of the topological features identiﬁed 
+in a PD. This technique has been implemented in the Homcloud 
+software, which can be used to identify the 1D holes that are 
+responsible for differences between the classes. Inverse analysis 
+identiﬁes features of the data corresponding to areas of the PD associated with the masks found in Fig. 23 . The inverse analysis for 
+a sample of Class 1 and Class 2 is shown in Fig. 24 . For Class 2 we 
+see larger separation between points and larger holes that persist 
+for a longer period of the ﬁltration. In Class 1 we see that the separation between points is smaller, resulting in smaller loops that 
+are formed early and die quickly. 
+6.2. Topology of time-series and phase-planes 
+Persistence homology has seen applications in the area of time 
+series analysis ( Seversky et al., 2016; Umeda, 2017; Wang et al., 
+2018; Perea, 2019; Khasawneh et al., 2018 ). A simple example 
+of the application of persistence homology is the analysis of the 
+topology of phase-planes generated by a dynamical system. An 
+example for two state variables f 1 , f 2 is shown in Fig. 25 . The 
+phase plane for functions f 1 and f 2 is created by plotting the 
+two functions against each other ( Fig. 25 b). The phase plane for 
+this periodic system deﬁnes an ellipse, which is easy to characterize (e.g., in terms of its axes). We can add complexity to the 
+topology of the phase plane by perturbing the dynamical system. For example, by adding a perturbation, we change the phaseplane to that shown in Fig. 26 . The topology of the new plane 
+cannot be fully characterized using simple ellipsoids. The analysis of the phase plane topology through an epsilon ball ﬁltration allows us to differentiate the dynamics of the perturbed and 
+unperturbed systems. We compare their PDs in Figs. 27 and 28 ; 
+the unperturbed system contains a single highly persistent cycle while the perturbed system contains four cycles that are less 
+persistent. 
+We can also use persistent homology within a sliding windowing method to detect when a change has occurred in the dynamics 
+of a system (e.g., for fault detection). This concept is illustrated in 
+Fig. 29 where we only show 4 windows for illustrative purposes; 
+here we can see that the ﬁrst, second, and fourth windows have 
+similar topology while the third window has a different topology. 
+We compare the PDs of each window in Fig. 29 ; the PDs clearly 
+reveal that the phase plane of the third window is different. This 
+example demonstrates that the geometry of time series is highly 
+informative and can capture the behavior of the system with minimal information. The small windows used in this example immediately demonstrate the cyclic/periodic nature of the time series 
+and show a large difference in shape when a perturbation occurs. 
+Many current methods require a large amount of information to 
+model the given system via statistics or machine learning methods ( Malhotra et al., 2015; Laptev et al., 2015; Chan and Mahoney, 
+2005 ). 
+Another common perturbation of a system is noise ; an important observation here is that noise usually has the effect of intro- 
+13 
+
+Fig. 24. Inverse analysis based on classiﬁcation weights for Class 1 and Class 2. The analysis reveals that the classiﬁer is separating the classes based on the presence of 
+large cycles in Class 2 and the larger number of smaller cycles in Class 1. 
+Fig. 25. Phase plane for periodic orbit with two states. The plane is represented as cloud points from the edge of an ellipse and is ideal for a geometric analysis. 
+Fig. 26. Phase plane for perturbed periodic orbit with two states. The geometry of the plane can no longer be represented as an ellipse, but still represents a sampling from 
+a more complex geometric object. 
+Fig. 27. PD for the phase plane reﬂects the presence of a single, persistent loop in the diagram. The persistence diagram captures the important geometric aspects of the 
+data. 
+ducing local effects to a trajectory but does not distort the overall topology of the trajectory. This is illustrated in Fig. 30 , where 
+we can see that the ellipse shape of the phase plane is retained. 
+In other words, the topology of the phase plane is stable in the 
+presence of noisy perturbations. In a real system, one may wish to 
+characterize whether noise-free and noisy systems exhibit similar 
+dynamics. One way to do this is to perform persistent homology 
+calculations on both phase planes and to compare the resulting 
+PDs. We show the results of this analysis in Fig. 31 ; the PDs reveal that both phase planes contain a persistent cycle (which indicates that they have phase planes with similar topologies). Features created by noise are shown at the bottom of the diagonal (these features have short persistence). These results demonstrate the stability of PDs ( Chazal et al., 2009 ), which is an important concept in TDA. These results also highlight that TDA is a 
+powerful tool for the classiﬁcation of time series ( Umeda, 2017 ), 
+identiﬁcation of periodic orbits and shifts ( Perea and Harer, 2015 ), 
+and for change point detection ( Gidea and Katz, 2018 ). Perea 
+14 
+
+Fig. 28. PD for the phase plane reﬂects the presence of four loops. The persistence diagram captures the important geometric aspects of the phase plane without having to 
+ﬁt a complex geometric model to the data. 
+Fig. 29. Sliding window method applied to time series. The ﬁrst, second, and fourth windows have phase planes with similar topologies while the third window has an 
+obvious shift (which introduces a change in the topology of its plane). This change in topology is captured by the persistence diagrams. 
+provides an excellent overview of TDA in signal processing 
+( Perea, 2019 ). 
+6.3. Topology of 2D scalar ﬁelds 
+In this example we use TDA to analyze the topology of 2D 
+scalar ﬁelds over a discrete n by n domain U. We generate data by 
+propagating a random ﬁeld { u i, j : u i, j ∈ U(0 , 1) } using the dynamic 
+2D diffusion Eq. (6.32) and we obtain the ﬁnal steady-state ﬁeld. 
+We generate ﬁelds with different textures by using different diffusion coeﬃcients D and independent, random initial points. The 
+resulting ﬁelds are used as the datasets; illustrative examples for 
+different diffusion coeﬃcients are shown in Fig. 32 . Here, the blue 
+color are points of small intensity (small values of u i, j ) while the 
+red color are points of high intensity. We see that small coeﬃcients 
+generate textures that are more granular while large coeﬃcients 
+generate smoother textures. Our goal is to characterize the geometry of the ﬁelds to investigate if their underlying structure can be 
+correlated to the diffusion coeﬃcient. In our analysis, we represent the scalar ﬁeld as a function (in 3D), as shown in Fig. 33 . This 
+functional representation of the ﬁeld reveals that low and high intensity points deﬁne critical (max/min) points of the function. This 
+also reveals that the ﬁeld has complex topological features (many 
+critical points with no obvious patterns are present). 
+u (n +1) 
+i,j 
+−u (n ) 
+i,j 
+
+t 
+= D 
+ 
+u (n ) 
+i +1 ,j −2 u (n ) 
+i,j + u (n ) 
+i −1 ,j 
+(
+x ) 2 
++ 
+u (n ) 
+i,j+1 −2 u (n ) 
+i,j + u (n ) 
+i,j−1 
+(
+y ) 2 
+ 
+(6.32) 
+To illustrate the beneﬁts of using TDA against other techniques, 
+we investigate whether the structure of the dataset can be revealed 
+by direct application of PCA ( Jolliffe and Cadima, 2016 ) and diffusion maps ( Coifman and Lafon, 2006 ). This is a simple, naive 
+comparison but will demonstrate that the datasets have nontrivial structure. The projection of the data onto the ﬁrst two principal components is shown in Fig. 34 a. Here, we highlight the points 
+15 
+
+Fig. 30. Phase plane for noisy f 1 and f 2 shows a similar topology to the noiseless counterparts. 
+Fig. 31. Persistence diagrams for noisy and noiseless functions. Note that the dominant feature (cycle) persists. 
+Fig. 32. Samples from 2D scalar ﬁelds with their corresponding diffusion coeﬃcient ( D ) value, where red represents high intensity values and blue represents small intensity 
+values. 
+Fig. 33. 3D-functional representation of a scatter ﬁeld with diffusion coeﬃcient D = 
+0 . 6 . The function is treated as a cubical complex and the ﬁltration is performed over 
+the scalar value. 
+based on the associated diffusion coeﬃcient. We also apply the diffusion maps (a nonlinear dimensionality reduction technique) and 
+we obtain similar results (see Fig. 34 b). These results show that 
+the features extracted by PCA and diffusion maps do not correlate 
+to the diffusion coeﬃcient. 
+We now apply TDA to the 3D ﬁeld functions and extract persistence diagrams. Example persistence diagrams for H 0 and H 1 are 
+shown in Fig. 35 . We see that there is a clear shift in the PDs as we 
+increase the diffusion coeﬃcient. This seems to indicate that the 
+PDs vary continuously with the diffusion coeﬃcient. To verify this, 
+we vectorize the PDs and apply PCA to the vectorized diagrams. 
+The projection of the vectorized PDs onto the dominant principal 
+components is shown in Fig. 36 . It is clear that there is a continuous dependence of the PD on the diffusion coeﬃcient (it forms a 
+continuous manifold). This result provides another demonstration 
+of the stability of persistence diagrams and how topology varies 
+continuously under perturbations. Speciﬁcally, stability indicates 
+that small changes in a given function ( f, g) results in bounded 
+changes in the associated persistence diagrams ( P D f , P D g ). Thus, 
+because our perturbations to each function are based on changes 
+in D, we can guarantee that the distance between PDs is bounded 
+by the size in the perturbation in the diffusion coeﬃcient (i.e., the 
+distance is not arbitrary). 
+6.4. Topology of images 
+We now illustrate image analysis using TDA. Speciﬁcally, we analyze the optical response of liquid crystal sensors to air contaminants, in particular dimethyl methylphosphonate (DMMP) which is 
+a chemical warfare agent simulant ( Smith et al., 2020; Shah and 
+Abbott, 2001 ). We analyze the spatial response of a sensor in the 
+presence of DMMP and in the presence of humid nitrogen (nitro- 
+16 
+
+Fig. 34. Dimensionality reduction for the 2D dimensional scalar ﬁelds using PCA and diffusion maps. 
+Fig. 35. Evolution of PDs with the diffusion coeﬃcient. A dependence of the topology with the diffusion coeﬃcient emerges. 
+Fig. 36. PCA performed on the PD for two-dimensional scalar ﬁelds. This reveals 
+that the geometry of the dataset is directly related to the diffusion coeﬃcient. 
+Fig. 37. Optical patterns for a liquid crystal sensor when exposed to DMMP or water. 
+gen + water), which we will refer to as water. The sensor responds 
+to both DMMP and water, but there are subtle spatial differences in 
+the optical response of the sensor to these different environments. 
+The working principle of these sensors relies on a change in orientation of liquid crystal molecules in a ﬁlm when exposed to an 
+air contaminant (analyte). The change in orientation results in optical ﬁelds with different spatial and color features (see Fig. 37 ). 
+We use TDA to investigate if the topological features of these patterns present a dependence on the air environment. This information can be used to design sensors (i.e., we can calibrate the sensor 
+by correlating the optical response to the presence of DMMP). 
+Each optical micrograph is an image, taken from the endpoint 
+of the sensor response, with three channels ( Red, Green , and Blue ). 
+We project these three channels onto a single grayscale channel 
+by computing the total intensity of each pixel in the image. The 
+conversion of the image to a single channel allows us to treat the 
+image as a cubical complex over which we can perform a simple 
+Morse ﬁltration (level sets deﬁned in terms of intensity, as done 
+in the previous diffusion ﬁeld example). A grayscale image was 
+used to simplify the computations; however, more complicated approaches could be taken to deal with the three color channels. 
+In order to understand the importance of the information contained in the Morse ﬁltration analysis, we apply a linear SVM to 
+the vectorized persistence diagrams associated to our images. We 
+ﬁnd that the topological features of the images gives us a classiﬁcation accuracy of 85 ± 2% (for a dataset of more than 1,0 0 0 images). In order to identify the characteristic features for the responses at high and low concentration, we utilize the classiﬁcation weights of the linear SVM model. The classiﬁcation weights 
+are visualized in Fig. 38 . We apply a masking method to identify 
+the portions of the persistence diagram that are critical for deﬁning whether a response pattern is a result of high or low concentration. We can use these masked areas to identify the features 
+of the images that separate the high concentration patterns from 
+the low concentration patterns. To visualize the geometric differences between the patterns associated with DMMP and water, we 
+again utilize the Homcloud software to perform the inverse analysis via volume optimal cycles. Here, we focus on inverse analysis 
+for the H 1 homology group. The results of this analysis for a couple of sample images is found in Fig. 38 . Inverse analysis reveals 
+that, when the sensors are exposed to water, the pattern exhibits 
+many small distinct clusters; in contrast, when the sensor is exposed to DMMP, there are few large clusters. This shows how inverse analysis allows us to pinpoint topological features of the image that drive classiﬁcation. The ability to classify as well as extract 
+meaningful information from the topology of the images provides 
+an important advantage over machine learning methods. The work 
+of Smith, Cao, and co-workers demonstrate that machine learning 
+models can be used to classify the responses of these sensors with 
+17 
+
+Fig. 38. (a) Areas corresponding to optimal weights from linear SVM classiﬁcation. The areas of the PD that distinguish DMMP are shown in red and the ones that distinguish 
+water are shown in blue. Inverse analysis based on SVM weights for (b) DMMP and (c) water responses. Note that the camera artifact in (c) has no highlighted areas, 
+demonstrating that the extracted features are physically relevant. 
+Fig. 39. Deformation of a 2D scatter ﬁeld over time. 
+higher accuracy, but provide minimal interpretability. Interpretability is needed to understand the physics of these sensors which can 
+improve the sensitivity, and broaden the applicability, of the sensors ( Smith et al., 2020; Cao et al., 2018 ). 
+6.5. Topology of probability density functions 
+The analysis of the shape of probability density functions is 
+typically done using summarizing statistics (e.g., moments such 
+as skewness and kurtosis) or through parametric techniques (ﬁtting a parametric model such as a Gaussian mixture to the data) 
+( Walter and Pronzato, 1997 ). These models are powerful in their 
+simplicity but might not be ﬂexible enough to capture complex 
+features of density functions (particularly in high dimensions). In 
+this example we explore the shape of complex density functions by 
+using topological techniques. We use an experimental ﬂow cytometry dataset to illustrate how this can be done. The ﬂow cytometry 
+dataset was obtained through the FlowRepository ( Spidlen et al., 
+2012 ) (Repository ID: FR-FCM-ZZC9). This dataset represents a temporal study of the kinetics of gene transcription and protein translation within stimulated human blood mononuclear cells through 
+the quantiﬁcation of proteins (CD4 and IFN- γ ) and mRNA (CD4 and 
+IFN- γ ) ( Van Hoof et al., 2014 ). In our study, we focus on the evolution of the concentration of CD4 mRNA and IFN- γ mRNA in a given 
+cell which is measured via a ﬂow cytometer. At each time point in 
+the study, a number of cells ( ∼15 , 0 0 0 ) are passed through the 
+ﬂow cytometer, each one of these cells provides a vector of scalar 
+values x ∈ R n corresponding to each measurable variable. In this 
+case we set n = 2 as we are only utilizing the scalar values that 
+represent the measure of both CD4 mRNA and IFN- γ mRNA, samples of these distributions are found in Fig. 39 . From this we obtain 
+a 2D scatter ﬁeld. We have restricted ourselves to two dimensions 
+for illustrative purposes, but this same analysis can be conducted 
+for a point cloud of higher dimensions, accounting for all variables 
+measured by a ﬂow cytometer. The goal in this analysis is to use 
+TDA to quantify the temporal evolution of the shape of the scatter ﬁeld during the kinetic response of human blood mononuclear 
+cells during stimulation. This approach provides an alternative to 
+traditional parametric or heuristic methods such as gating, which 
+are diﬃcult to tune as they are highly sensitive to potential noise 
+and outliers in the data. The gate selection may also require complicated multivariate mixture models to identify the correct gating 
+values ( Lo et al., 2008 ). 
+In order to analyze the topology of the scatter ﬁelds, we utilize Gaussian kernel smoothing ( Sheather, 2004 ). The work of 
+( Bobrowski et al., 2017 ) demonstrates that provided a large enough 
+sample, the homology of the Gaussian kernel density estimate derived from a sample is equivalent to the homology of the true density. Fig. 40 shows the Gaussian kernel smoothing of a ﬂow cytometry scatter plot. An example persistence diagram for the function 
+is shown in Fig. 40 . As in the case of the diffusion example, in 
+3D we can represent the scatter ﬁeld as a continuous function (in 
+this case a probability density function). This probability density 
+function ( Fig. 41 a) can be analyzed using Morse ﬁltration. Our goal 
+in this analysis is to quantify the time evolution of the probability density functions during stimulation. Our strategy consists of 
+computing the Wasserstein distance ( w d ) between the persistence 
+diagram of a given time point to the persistence diagram of the 
+sample at time zero ( Carriere et al., 2017 ). Speciﬁcally, given ﬂow 
+cytometry samples X 1 , X 2 and the time zero sample X 0 as well as 
+their corresponding persistence diagrams P D 1 , P D 2 , P D 0 and time 
+points T 0 ≤T 1 ≤T 2 , we observe that: 
+w d (P D 1 , P D 0 ) ≤w d (P D 2 , P D 0 ) 
+(6.33) 
+From Fig. 41 b, we can see that the distance exhibits a strong dependence on time. This suggests that there exists a continuous 
+mapping between the persistent diagram and time (the topological 
+deformation is continuous with respect to time). This again reveals 
+the continuity of the persistence diagrams (of topology) to perturbations. These results highlight how topological data analysis provides a quantiﬁable approach to characterize complex probability 
+density functions and their evolution over time. 
+6.6. Topology of 3D ﬁelds 
+We now illustrate how to use TDA to analyze the topology induced by 3D point clouds. Speciﬁcally, we study datsets generated by molecular dynamics (MD) simulations ( Chew et al., 2019; 
+Walker et al., 2018 ). The dataset under study analyzes the inﬂuence of the 3D liquid-phase environment formed by molecules of 
+18 
+
+Fig. 40. Processing of the ﬂow cytometry scatter ﬁeld. The raw data is ﬁrst smoothed via a Gaussian kernel and then the smoothed diagram is processed via a Morse 
+ﬁltration. 
+Fig. 41. (a) Scatter ﬁeld as a probability density function in 3D; Morse ﬁltration is performed using level sets of the probability density. (b) Wasserstein distance between 
+the persistence diagrams as a function of time. There is a clear continuous evolution of the Wasserstein distance that characterizes the change in topology. 
+Fig. 42. Visualization of 3D water density ﬁeld generated by MD simulation. 
+a solvent, co-solvent, and a reactant on reactivity ( Chew et al., 
+2019 ). The reactivity is quantiﬁed via a kinetic solvent parameter σ
+that is obtained from experiments. Experiments suggest that reactivity is inﬂuenced by hydrophilicity of the solvent. The main 
+hypothesis is that, as the solvent concentration is increased, the 
+water in the system is concentrated around the solvent molecule, 
+and that molecules with high hydrophilicity are able to take advantage of this effect. In order to study this hypothesis, molecular 
+dynamics computations were performed by Chew and co-workers 
+( Chew et al., 2019 ). The data output of an MD simulation has both 
+spatial and temporal dimensions. Each simulation gives atomic positions X t ∈ I R M×3 ( M is the number of species) at multiple times t
+(measured in nanoseconds). In our analysis, we utilize a 3D point 
+cloud of water molecule positions that result from a time average 
+of 100 nanoseconds. An example of this point cloud (visualized as 
+a ﬁeld) is provided in Fig. 42 . Each density ﬁeld is labeled with a 
+reactivity σ obtained from experiments. Recent work by Chew and 
+co-workers has analyzed the 3D density by using 3D convolutional 
+neural networks (CNNs) and has shown that the features extracted 
+from the CNN are strongly correlated to reactivity ( Chew et al., 
+2019 ). CNNs are highly effective tools but require a large number of parameters ( ∼160,0 0 0 in this case) and are diﬃcult to interpret. Our goal is to study if the topology of the 3D density can 
+be characterized in a more straightforward manner and to explore 
+whether topology changes in correlation with reactivity. 
+Fig. 43. Slices of 3D water density ﬁeld as ﬁltration proceeds for different density values. The ﬁltration reveals the presence of voids in the data associated with high 
+concentrations of water molecules. 
+19 
+
+Fig. 44. (a) PCA analysis on persistence diagrams for MD simulations. The analysis reveals strong dependence of reactivity σ . (b) Regression plot for SVM with a radial basis 
+function. The predictions over 5-fold cross validation yield an MSE of 0 . 07 ± 0 . 003 . 
+To perform our analysis, we treat the 3D point cloud as a continuous ﬁeld (function). Here, we perform a Morse ﬁltration and 
+treat the data as a 3D cubical complex (a voxel). The ﬁltration 
+will be done by exploring levels sets for the water density. Note 
+that this is a ﬁltration in a higher dimension that our previous examples for the diffusion ﬁeld and for liquid crystal sensors. The 
+main focus of this approach is to capture the clustering of water 
+near hydrophilic molecules, and the lack of clustering near nonhydrophilic molecules. We visualize the water density ﬁltration in 
+Fig. 43 via a 2-dimensional slice. We can see that voids in the 
+data are generated as we increase the ﬁltration value. The voids 
+represent areas of high water density which is precisely what we 
+wish to quantify. From these ﬁltrations, we produce persistence diagrams focused on H 2 (since this homology group quantiﬁes these 
+voids). The persistent diagrams are then vectorized via the persistence image and we use PCA reduction to visualize them (see 
+Fig. 44 a). We use SVM regression with a radial basis kernel to 
+predict reactivity as a function of the persistence diagrams (see 
+Fig. 44 b). 
+The PCA projection reveals that there is strong dependence of 
+the reactivity on the topology. This suggests that the information gained via persistent homology extracts informative features 
+of the 3D ﬁeld that explain reactivity. This also suggests that a 
+simple regression method (as opposed to a complex neural network) would be effective at predicting the reactivity. In order to 
+test this hypothesis, the experimental dataset with 70 points is 
+split into train/test sets with 49/21, points to build the SVM regression model. A 5-fold cross validation is performed to estimate 
+the performance of the SVM regression. We found that this model 
+captures the trend of reactivity well; moreover, this simple model 
+yields a mean square error of 0 . 07 ± . 003 ( Fig. 44 ). These results 
+are relevant because they indicate that it is possible to predict experimental reactivity directly from MD simulations. 
+7. Conclusions 
+Topological data analysis (TDA) provides a set of powerful 
+methods and tools for understanding the underlying geometry 
+of data. These techniques represent data such, as point clouds 
+and functions, as geometric objects and explores these objects in 
+terms of basic geometric features. We have shown that TDA offers a number of important theoretical properties (such as stability), offers ﬂexibility to extract features from different types 
+of data, and how these extracted features can be exploited using statistical and machine learning techniques. In particular, we 
+demonstrate the capability of TDA in characterizing the shape of 2dimensional point clouds and distributions without parameter estimation ( Sections 6.1,6.5 ). We also utilize TDA in understanding 
+the phase space of coupled time series, and how it can be used 
+to detect anomalies based upon the geometry of the time series 
+alone ( Section 6.2 ). The TDA methodology also provides a new perspective on the analysis of continuous data, such as an image, as 
+a manifold embedded in higher dimensional space. This perspective allows for the analysis of the geometric and topological structure of data such as 2-dimensional images ( Sections 6.3 and 6.4 ) 
+or 3-dimensional density ﬁelds from MD simulations ( Section 6.6 ). 
+The TDA ﬁeld is in rapid development from both a theoretical 
+and applied perspective. Moreover, there are easily accessible software packages to conduct scalable computations (such as such 
+as Gudhi ( Maria et al., 2014 ), Homcloud ( Obayashi, 2020(@ ), 
+Javaplex-Matlab ( Adams et al., 2014 ) and R-TDA ( Fasy et al., 
+2014 )). We believe that TDA can bring a new geometric and topological perspective to challenging problems in chemical engineering. 
+Declaration of Competing Interest 
+Authors declare that they have no conﬂict of interest. 
+CRediT authorship contribution statement 
+Alexander D. Smith: Conceptualization, Data curation, Formal 
+analysis, Investigation, Methodology, Software, Validation, Funding 
+acquisition, Visualization, Writing - original draft, Writing - review 
+& editing. Paweł Dłotko: Conceptualization, Data curation, Investigation, Methodology, Project administration, Resources, Supervision. Victor M. Zavala: Conceptualization, Formal analysis, Funding 
+acquisition, Investigation, Methodology, Project administration, Supervision, Writing - original draft, Writing - review & editing.

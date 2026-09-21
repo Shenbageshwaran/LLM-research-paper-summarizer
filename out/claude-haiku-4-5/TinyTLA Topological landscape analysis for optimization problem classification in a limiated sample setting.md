@@ -1,0 +1,58 @@
+# TinyTLA: Topological landscape analysis for optimization problem classification in a limited sample setting
+
+**Authors:** Gašper Petelin, Gjorgjina Cenikj, Tome Eftimov  
+**Type:** empirical
+
+## Motivation
+
+Characterizing optimization problems and their properties is crucial for algorithm selection, algorithm configuration, and building quality benchmarks. Existing landscape feature approaches have limitations such as large computational complexity for high-dimensional problems, sensitivity to sample size and sampling technique, and lack of invariance to transformations like scaling and shifting.
+
+## Knowledge gap
+
+The original TLA methodology required thousands of samples to detect useful topological structures and hundreds of samples minimum, produced a varying number of features dependent on sample size, and had limited practical applicability. The paper addresses whether TLA can be adapted to work with low numbers of samples and whether topological features are complementary to existing ELA features.
+
+## Goal
+
+To extend and improve topological landscape analysis (TLA) methodology by proposing improvements for extracting topological features from optimization problems in scenarios with limited samples, and to demonstrate that these features capture complementary information not covered by existing exploratory landscape analysis (ELA) features.
+
+## Methods
+
+- Topological Data Analysis (TDA) applied to point clouds from optimization problem samples
+- Vietoris-Rips complex construction
+- Persistence homology and persistence diagrams
+- Persistence images for feature extraction
+- Combined distance matrix approach merging sample location distances and objective function value distances using parameter α
+- Principal Component Analysis (PCA) for point cloud transformation
+- Axis and Volume transformations for sample normalization
+
+## Metrics
+
+- Classification accuracy for problem instance classification
+- Cosine similarity between problem instances
+- Pearson linear correlation between features
+- Confusion matrices for classification performance
+
+## Experiments
+
+Classification of 2400 problem instances from 24 problem classes in the COCO (COmparing Continuous Optimizers) benchmark suite. Features extracted from 200 samples per problem instance. Classification performed using AutoGluon AutoML framework with 90/10 train-test split repeated 30 times. Sensitivity analysis of hyperparameters including α parameter, smoothing kernel size, homology dimension, distance metrics, and sample size.
+
+## Key findings
+
+- Topological features are not strongly correlated with any existing ELA feature groups, indicating they capture complementary information
+- TLA features achieve ~63% classification accuracy on 2D COCO problems, comparable to some ELA feature groups
+- Different homologies (H0, H1, H2) reveal different topological information; H0 is most informative for most dimensions
+- Topological features are inherently tied to sample size and do not generalize across different sample sizes
+- The α parameter balancing sample location and objective value information is critical; optimal values around 0.1-0.3
+- Persistence image smoothing significantly improves classification accuracy; optimal kernel sizes between 0.0001-0.001
+- Euclidean, Canberra, Chebyshev, and Cityblock distance metrics perform well; cosine similarity performs poorly
+- Classification accuracy plateaus around 400 samples for 2D problems and 400+ samples for higher dimensions
+
+## Future work
+
+- Investigate relationship between topological features and high-level features to bridge gap between high and low-level feature groups
+- Reduce number of highly correlated topological features using Betti numbers and persistence entropy
+- Evaluate topological features on algorithm performance prediction tasks beyond problem classification
+- Explore TLA features for algorithm selection and whether they improve generalizability on unseen instances
+- Extend TLA to use samples from algorithm execution rather than static sampling
+- Investigate sensitivity of topological features to sampling techniques and perturbations
+- Extend methodology to combinatorial optimization problems

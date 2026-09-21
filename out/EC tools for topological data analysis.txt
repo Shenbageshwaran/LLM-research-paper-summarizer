@@ -1,0 +1,1771 @@
+Journal of Machine Learning Research 25 (2024) 1-39
+Submitted 3/23; Revised 7/24; Published 7/24
+Euler Characteristic Tools for Topological Data Analysis
+Olympio Hacquard
+olympio.hacquard@universite-paris-saclay.fr
+Laboratoire de Math´ematiques d’Orsay
+Universit´e Paris-Saclay, CNRS, Inria
+91400 Orsay France
+Vadim Lebovici
+vadim.lebovici@maths.ox.ac.uk
+Mathematical Institute
+University of Oxford,
+Oxford, United Kingdom
+Editor: Sayan Mukherjee
+Abstract
+In this article, we study Euler characteristic techniques in topological data analysis. Pointwise computing the Euler characteristic of a family of simplicial complexes built from data
+gives rise to the so-called Euler characteristic profile. We show that this simple descriptor
+achieves state-of-the-art performance in supervised tasks at a meager computational cost.
+Inspired by signal analysis, we compute hybrid transforms of Euler characteristic profiles.
+These integral transforms mix Euler characteristic techniques with Lebesgue integration to
+provide highly efficient compressors of topological signals. As a consequence, they show
+remarkable performances in unsupervised settings. On the qualitative side, we provide numerous heuristics on the topological and geometric information captured by Euler profiles
+and their hybrid transforms. Finally, we prove stability results for these descriptors as well
+as asymptotic guarantees in random settings.
+Keywords:
+Topological Data Analysis, Machine Learning, Multiparameter Persistence,
+Euler characteristic profiles, Hybrid transforms
+1 Introduction
+Extracting topological information from data of various natures follows a machinery that
+finds its origins in the works of Edelsbrunner et al. (2000). The main idea consists of building
+a one-parameter family of topological spaces on top of data and tracking the evolution of its
+topology, typically via homological computations. This multi-scale topological information
+is recorded in the form of what is called a persistence diagram; see Edelsbrunner et al. (2000);
+Edelsbrunner and Harer (2022). The space of persistence diagrams is a metric space for
+the so-called bottleneck distance, (Cohen-Steiner et al., 2007), but it cannot be isometrically
+embedded into a Hilbert space (Carri`ere and Bauer, 2018; Bubenik and Wagner, 2020).
+At the cost of losing some information, these diagrams are still often turned into vectors
+to perform various learning tasks such as classification, clustering, or regression.
+Most
+commonly used techniques include persistence images (Adams et al., 2017), landscapes
+(Bubenik et al., 2015), and more recently measure-oriented vectorizations in Royer et al.
+(2021) and neural network methods from Carri`ere et al. (2020); Reinauer et al. (2021). An
+overview of topological methods in machine learning has been presented in the survey of
+Hensel et al. (2021). These methods have demonstrated their efficiency in a wide variety of
+applications and types of data, such as health applications (Rieck et al., 2020; Fern´andez
+©2024 Olympio Hacquard and Vadim Lebovici.
+License: CC-BY 4.0, see https://creativecommons.org/licenses/by/4.0/. Attribution requirements are provided
+at http://jmlr.org/papers/v25/23-0353.html.
+
+and Mateos, 2022; Aukerman et al., 2021), biology (Ichinomiya et al., 2020; Rabad´an and
+Blumberg, 2019) or material sciences (Lee et al., 2017; Hiraoka et al., 2016).
+In many practical scenarios, it is natural to look at data with more than one parameter, i.e., to consider multi-parameter families of topological spaces instead of one-parameter
+ones. It allows one to cope with outliers by filtering the space with respect to an estimated local density, or to deal with intrinsically multi-parameter data, such as blood cells
+with several biomarkers. However, there does not exist a complete combinatorial descriptor
+similar to the persistence diagram that could make them usable in practice (Carlsson and
+Zomorodian, 2009). One of the main objectives of this field is to build informative descriptors of such families. Although not intrinsically multi-parameter, persistence landscapes
+have successfully been generalized to the multi-parameter setting in Vipond (2020) and
+persistence images to the two-parameter setting in Carri`ere and Blumberg (2020). Besides
+their high level of sophistication, the main limitation of these tools is their computational
+cost; see Carri`ere and Blumberg (2020, Table 2) and Section 4.5.
+In contrast, some topological methods do not compute homological information—thus
+bypassing the computation of persistence diagrams—but rather compute the Euler characteristic of the topological spaces at hand. The Euler characteristic of a simplicial complex
+is a celebrated topological invariant that is simply the alternated sum of the number of simplices of each dimension. Considering the pointwise Euler characteristic of a one-parameter
+family of simplicial complexes gives rise to a functional multi-scale descriptor called the
+Euler characteristic curve.
+Though Euler characteristic-based descriptors may appear coarse, we highlight four
+main reasons to use them.
+First, they have demonstrated a good predictive power in
+various settings (Worsley et al., 1992; Richardson and Werman, 2014; Smith and Zavala,
+2021; Jiang et al., 2020; Am´ezquita et al., 2022). Second, the simplicity of these descriptors
+translates into a reduced computational cost.
+They can be computed in linear time in
+the number of simplices in a simplicial filtration instead of typically matrix multiplication
+time for persistence diagrams (Milosavljevi´c et al., 2011). Moreover, the locality of the
+Euler characteristic can be exploited to design highly efficient algorithms computing Euler
+curves, as in Heiss and Wagner (2017). Third, there are several known theoretical results on
+the Euler characteristic of a random complex. Mean formulae for the Euler characteristic
+of superlevel sets of random fields are proven in Adler and Taylor (2009), and results
+for the Euler characteristic of a complex built on a Poisson process are established in
+Corollary 4.2 of Bobrowski and Adler (2014) and Corollary 6.2 of Bobrowski and Weinberger
+(2017). Furthermore, Euler curves associated with random point clouds are proven to be
+asymptotically normal for a well-chosen sampling regime in Krebs et al. (2021), where the
+authors also apply this construction to bootstrap. Fourth, they naturally generalise to the
+multi-parameter setting, becoming so-called Euler characteristic surfaces (Beltramo et al.,
+2022) and profiles (D lotko and Gurnari, 2022).
+We demonstrate that these tools reach state-of-the-art performance at a minimal computational cost when coupled with a powerful classifier such as a gradient boosting or a
+random forest. However, due to their simplicity, these descriptors do not manage to linearly separate the different classes or be competitive on unsupervised tasks. Inspired by
+signal analysis, we cope with these limitations by studying integral transforms of Euler
+characteristic curves and profiles.
+More precisely, we consider a general notion of inte-
+2
+
+gral transforms mixing Lebesgue integration and Euler characteristic techniques recently
+introduced in Lebovici (2022) under the name of hybrid transforms. In the one-parameter
+case, hybrid transforms are classical integral transforms of Euler curves. Similarly, hybrid
+transforms depend on a choice of kernel which offers a wide variety of possible signal decompositions. Yet, hybrid transforms differ from classical integral transforms in general. In
+so doing, they enjoy many specific appealing properties, such as compatibility with topological operations from Euler calculus (Lebovici, 2022, Section 5). Most importantly, in the
+context of multi-parameter sublevel-sets persistence, hybrid transforms can be expressed as
+one-parameter hybrid transforms of Euler curves associated with a linear combination of
+the filtration functions. Consequently, mean formulae for hybrid transforms associated with
+Gaussian random fields are derived in (Lebovici, 2022, Section 8). Studying the asymptotic
+behaviour of topological descriptors of random complexes is a deeply-studied question in
+the one-parameter setting; see Bobrowski and Kahle (2018) for a survey. Together with
+the works of Botnan and Hirsch (2022), our results form the first occurrence of limiting
+theorems in a multi-persistence framework in the literature.
+Contributions and outline.
+In this article, we show that Euler characteristic profiles
+and their hybrid transforms are informative and highly efficient topological descriptors.
+Throughout the paper, we use classical methods based on persistence diagrams as a baseline for our descriptors. After introducing the necessary notions in Section 2, we provide
+heuristics on how to choose the kernel of hybrid transforms and give many examples of the
+type of topological and geometric behaviour Euler curves and their integral transforms can
+capture from data in Section 3. Most importantly, our main contributions are the following:
+• We demonstrate that Euler profiles achieve state-of-the-art accuracy in supervised
+classification and regression tasks when coupled with a random forest or a gradient
+boosting (Sections 4.1, 4.2 and 4.4) at a very low computational cost (Section 4.5).
+Note that the multi-parameter nature of our tools and their computational simplicity
+allows us to use up to 5-parameter filtrations to classify graph data. They typically
+outperform persistence diagrams-based vectorizations, both in terms of accuracy and
+computational time.
+• We demonstrate that hybrid transforms act as highly efficient information compressors and typically require a much smaller resolution than Euler profiles to reach a
+similar performance. They can also outperform Euler profiles in unsupervised classification tasks and in supervised tasks when plugging a linear classifier (Figure 7 and
+Sections 4.1 to 4.3). In Section 4.3, we illustrate their ability to capture fine-grained
+information on a real-world data set.
+• We provide several theoretical guarantees for these descriptors. First, we prove stability properties that clarify the robustness of our tools with respect to perturbations
+(Section 5). Expressed in terms of L1 norms, these are also hints of the sensitivity
+of our tools to the underlying geometry of the data at hand. Similarly to persistence
+diagrams, we can establish the pointwise convergence of hybrid transforms associated
+with random samples and their asymptotic normality for a specific filtration function.
+We also establish a law of large numbers in a multi-filtration set-up (Section 6).
+Finally, Section 7 is devoted to the proofs of the results stated in Sections 5 and 6.
+3
+
+2 Topological descriptors
+This section presents all the necessary notions from simplicial geometry and the construction
+of the topological descriptors used throughout the article.
+Let us first introduce some
+conventions.
+(i) The dual of a vector space V is denoted by V∗, and Rm will always be identified with
+its dual under the canonical isomorphism. For ξ ∈Rm∗and t ∈Rm, we often denote
+ξ · t = ξ(t).
+(ii) We denote by Rm
++
+∗the cone of linear forms on Rm that are non-decreasing with respect
+to the coordinatewise order on Rm, or equivalently that have non-negative canonical
+coordinates.
+(iii) Let I be an interval of R and denote by L1(I) the space of absolutely integrable
+complex-valued functions on I.
+(iv) Let p ∈[1, ∞] and let f : Rm →C be locally p-integrable. We denote by ∥f∥p,M the
+p-norm of f · 1[−M,M]m. If f is p-integrable, we denote its p-norm by ∥f∥p.
+(v) We always consider the coordinate-wise order on Rm.
+2.1 Simplicial complexes, filtrations
+A (finite) abstract simplicial complex K, or simply simplicial complex, is a finite collection
+of finite sets that is closed under taking subsets. An element σ ∈K is called a simplex, and
+subsets of σ are called faces of σ. The inclusion between simplices induces a partial order
+on K that we denote simply by ≤. The dimension of a simplex with k elements is equal to
+k −1. The Euler characteristic of a simplicial complex K is the integer:
+χ(K) =
+X
+σ∈K
+(−1)dim σ.
+Until the end of this section, we let K be a finite simplicial complex. An m-parameter
+filtration of K is a family F = (Ft)t∈Rm of subcomplexes Ft ⊆K that is increasing with
+respect to inclusions, i.e., such that Ft ⊆Ft′ for any t, t′ ∈Rm with t ≤t′. From now on,
+we do not refer explicitly to K when it is clear from the context. Many filtrations can be
+introduced by considering sublevel sets of functions:
+Example 1 Let f : K →Rm be a non-decreasing map for the inclusion of simplices,
+i.e., such that f(σ) ≤f(τ) for any σ ≤τ ∈K.
+The map f induces an m-parameter
+filtration of K called sublevel-sets filtration, denoted by Ff, and formed by the subcomplexes
+(Ff)t = {f ≤t} := {σ ∈K : f(σ) ≤t} for any t ∈Rm. We sometimes refer to the function
+f as the filter of Ff.
+A popular example of simplicial complex is the ˇCech complex of a point cloud, that is,
+a finite subset of Rd. This complex captures a lot of information on the geometry of the
+point cloud.
+Example 2 Let X ⊆Rd be finite.
+The ˇCech complex at scale t ≥0 is the simplicial
+complex ˇC(X, t) defined such that for (x0, . . . , xk) ∈Xk+1, the simplex {x0, . . . , xk} is in
+ˇC(X, t) if the intersection of closed balls ∩k
+l=0B(xl, t) is non-empty. The ˇCech filtration,
+4
+
+is defined at each t ∈R as the ˇCech complex at scale t for t ≥0, and as the empty set
+for t < 0. For computational reasons, we rather use a homotopy equivalent complex in
+numerical experiments, called the alpha filtration, which is a subcomplex of the Delaunay
+triangulation; see Bauer and Edelsbrunner (2017). See Figure 1 for an illustration.
+The properties of the ˇCech complex of a random point cloud have been deeply studied
+theoretically. We refer to Bobrowski and Kahle (2018) and Owada (2022) for the most
+recent results. When doing multi-parameter persistence, a common technique is to couple
+the ˇCech complex with some function on the data. Typically, we cope with outliers by
+coupling a ˇCech filtration with a density estimator built from the data at hand. This falls
+under the framework of function-ˇCech filtrations:
+Example 3 Let X ⊆Rd be finite and f = (f1, . . . , fm) : X →Rm be a bounded function.
+The function-ˇCech filtration is the (m + 1)-parameter filtration ˇC(X, f) of 2X defined for
+r ∈R and t = (t1, . . . , tm) ∈Rm by:
+ˇC(X, f)(r,t) =
+n
+σ ∈ˇC(X, r) : max
+x∈σ fi(x) ≤ti, ∀1 ≤i ≤m
+o
+.
+Again, we rather use function-alpha filtration in numerical experiments, which are defined
+similarly using alpha complexes.
+Let F be an m-parameter filtration and σ ∈K. The support of σ is the set supp(σ) :=
+{t ∈Rm : σ ∈Ft}. A filtration is called finitely generated if the support of any simplex
+appearing in the filtration is either empty or has a finite number of minimal elements;
+see Figure 2a for an illustration.
+Moreover, if the support of any simplex has at most
+one minimal element, then the filtration is called one-critical. In that case, one denotes
+by t(σ) the minimal element of supp(σ). For instance, function-Cech and function-alpha
+filtrations are one-critical.
+On the contrary, the degree-Rips bifiltration is not (Lesnick
+and Wright, 2016).
+Note that sublevel-sets filtrations are one-critical.
+Conversely, any
+one-critical filtration is a sublevel set filtration for the function f : σ ∈K 7→t(σ).
+2.2 Persistence diagrams
+Given a filtration of a simplicial complex, we want to extract multi-scale topological information from data. This is the objective of persistent homology, which constitutes the main
+tool of topological data analysis. It has found many practical applications (Rieck et al.,
+2020; Fern´andez and Mateos, 2022; Aukerman et al., 2021; Ichinomiya et al., 2020; Rabad´an
+and Blumberg, 2019; Lee et al., 2017; Hiraoka et al., 2016) as well as applications to other
+fields of theoretical mathematics, such as symplectic geometry (Polterovich et al., 2020).
+This section introduces the basic objects of persistent homology as introduced in classical
+textbooks; see Edelsbrunner and Harer (2022); Oudot (2017). We try to keep the notions
+as intuitive as possible and do not lay out the technical details of homology theory.
+The central tool of persistence theory is homology. Intuitively, given a topological space
+X, the k-th homology of X (with coefficient in a field) is a vector space whose dimension
+is equal to the number of independent k-dimensional holes of X. By 0-dimensional (resp.
+1-dimensional, 2-dimensional) holes, we mean connected components (resp. cycles, voids).
+5
+
+(a) t = 0.4
+(b) t = 1.5
+(c) t = 2.1
+(d) Persistence diagram
+Figure 1: Balls with varying radius t > 0 centered at each point of a finite subset X ⊆R2.
+These balls are used to define the ˇCech filtration ˇC(X) and its corresponding persistence
+diagrams of dimension 0 (in red) and 1 (in blue).
+These k-dimensional holes are often called homological features of X. One can also define
+the homology of a simplicial complex K, denoted by Hk(K) for each integer k ≥0, in such
+a way that they coincide with the above intuition when looking at the geometric realisation
+of the simplicial complex K.
+Given a one-parameter filtration F of a simplicial complex K, one of the main properties
+of homology implies that for any t ≤t′ in R, the inclusion of complexes Ft ⊆Ft′ induces
+a linear map Hk(Ft) →Hk(Ft′).
+The idea of persistent homology is to keep track of
+homological features appearing in the filtration through these maps. Each generator appears
+at some a ∈R called its birth and disappears at some b > a called its death. The couple
+[a, b) is called the bar of the corresponding homological feature. The multiset of bars [a, b)
+for each homological feature appearing in the filtration is called the degree k persistence
+barcode of F.
+One can also represent this barcode as a multiset of points (a, b) ∈R2
+called the degree k persistence diagram of F. We give an example of the construction of
+the persistence diagram of the ˇCech filtration in Figure 1d. In this case, the persistence
+diagram gives a lot of information on the topology and the geometry of the underlying point
+cloud. Here, when the radius of the balls is smaller than the smallest distance between any
+two points, we have as many connected components as points. As the radii of the balls
+grow, connected components of the union of balls merge (or die) one by one, except for
+one that never dies. Therefore, the degree 0 persistence diagram has only points born at
+0. As for the degree 1 persistence diagram, a cycle appears when the radius of the balls
+is large enough and is filled approximately at the radius of the underlying circle, hence a
+single point in the persistence diagram.
+2.3 Euler characteristic tools
+In this section, we recall the definitions of the descriptors of filtered simplicial complexes
+we use to perform topological data analysis.
+These invariants are defined using Euler
+characteristic profiles (Beltramo et al., 2022; D lotko and Gurnari, 2022) and topological
+and hybrid transforms of constructible functions (Schapira, 1995; Ghrist and Robinson,
+2011; Lebovici, 2022).
+While these tools can be defined in the more general setting of
+o-minimal geometry, we focus on filtered simplicial complexes.
+6
+
+Given an m-parameter filtration, computing the Euler characteristic for every value of
+the parameter t ∈Rm gives an integer-valued function on Rm that is a multi-scale descriptor
+of the evolution of the filtration with respect to t.
+Definition 1 The Euler characteristic profile of an m-parameter filtration F is the map:
+χF : t ∈Rm 7→χ(Ft).
+The map χF is usually refered to as the Euler characteristic curve (ECC) of F when m = 1
+and as the Euler characteristic surface (ECS) of F when m = 2; see Beltramo et al. (2022);
+D lotko and Gurnari (2022).
+Figure 2 shows an Euler characteristic surface computed on an elementary example.
+Widely used in data analysis (Smith and Zavala, 2021; D lotko and Gurnari, 2022; Beltramo
+et al., 2022; Jiang et al., 2020), this simple descriptor has proven to be efficient in capturing meaningful information on the data at hand. However, as illustrated in the following
+sections, we are interested in more robust descriptors built from integral transformations.
+(a) F
+(b) χF
+Figure 2: A finitely generated 2-parameter filtration (a) and its associated Euler characteristic surface (b). All vertices have one birth time, while all other simplices have two.
+Before introducing the other descriptors considered, we define the pushforward operation
+from Euler calculus; see Schapira (1988-1989); Viro (1988):
+Definition 2 Let F be a one-critical m-parameter filtration and ξ ∈Rm
++
+∗. The pushforward of F along ξ is the one-parameter family defined for any s ∈R by:
+ ξ∗F
+
+s =
+[
+ξ·t≤s
+Ft.
+The pushforward of χF along ξ is the Euler characteristic curve of ξ∗F. We denote this
+curve by ξ∗χF. In other words, we have ξ∗χF = χξ∗F.
+One-criticality of the filtration is necessary for Definition 2 to match the classical definitions
+of Schapira (1988-1989); Viro (1988). Writing the one-critical filtration as a sublevel-sets
+filtration, it is a simple exercise to check that the pushforward operation has a simple
+expression:
+7
+
+Lemma 3 Let f : K →Rm be a non-decreasing map and ξ ∈Rm
++
+∗. The Euler characteristic
+profile of Ff is denoted by χf. It is an easy exercise to check that ξ∗Ff = Fξ◦f and ξ∗χf =
+χξ◦f.
+Hybrid transforms mixing Euler calculus and classical Lebesgue integration have been
+introduced in Lebovici (2022).
+These transforms are continuous and piecewise smooth
+and enjoy several beneficial properties, such as index theoretic formulae in the context of
+sublevel-sets persistence; see Propositions 4.1 and 4.2 and Theorem 8.3 in loc. cit.. In the
+present context, they can be defined as follows:
+Definition 4 Let F be a one-critical m-parameter filtration and κ ∈L1(R). The hybrid
+transform with kernel κ of χF is the map:
+ψκ
+F : ξ ∈Rm
++
+∗7→
+Z
+R
+κ(s)ξ∗χF(s) ds.
+The following lemma is an obvious consequence of Lemma 3. It states that any mparameter hybrid transform restricted to an open half-line can be expressed as a oneparameter hybrid transform.
+It will be key to the proof of a law of large numbers for
+m-parameter hybrid transforms (Theorem 14).
+Lemma 5 Let F be a one-critical m-parameter filtration, let κ ∈L1(R) and ξ ∈Rm
++
+∗. For
+any λ > 0, one has:
+ψκ
+F(λξ) = ψκ
+ξ∗F(λ).
+Euler characteristic profiles and hybrid transforms constitute the two data descriptors
+we will use to perform topological data analysis.
+We give explicit expressions of these
+descriptors in specific cases below. These formulae will allow us to design algorithms to
+compute them in Section 3.1 and to build intuition on the type of behaviour they capture
+all along the paper.
+One-critical filtrations.
+Up to reducing K, one can assume that for any σ ∈K, there is
+t ∈Rm with σ ∈Ft. Then, one has:
+χF =
+X
+σ∈K
+(−1)dim σ1Qt(σ),
+(2.1)
+where Qu := {t ∈Rm : t ≥u} for any u ∈Rm.
+Let κ ∈L1(R). Denote by κ the primitive of κ whose limit at +∞is 0. The hybrid
+transform with kernel κ of χF is:
+ψκ
+F : ξ ∈Rm
++
+∗7−→−
+X
+σ∈K
+(−1)dim σκ (ξ · t(σ)) .
+(2.2)
+Remark 6 We often define hybrid transforms by specifying the primitive κ of the kernel κ
+whose limit at +∞is 0. We call κ the primitive kernel of the hybrid transform.
+Finally, in the case of a one-parameter filtration, hybrid transforms naturally appear
+as classical integral transforms of the Euler curve, making them a natural tool to extract
+information from the Euler curve and compress it into a small number of relevant coefficients.
+8
+
+Connection with classical transforms.
+Let F be a one-critical m-parameter filtration.
+First, assume that m = 1. For any ξ ∈R∗
++ and any s ∈R, one has (ξ∗F)s = Fs/ξ and
+hence ξ∗χF(s) = χF(s/ξ). A change of variables then ensures that the hybrid transform
+with kernel κ ∈L1(R) is equal to the rescaled classical transform:
+ψκ
+F : ξ ∈R∗
++ 7→ξ ·
+Z
+R
+κ(ξ · s)χF(s) ds.
+(2.3)
+Assume now that m ≥2. The hybrid transform with kernel κ differs from the classical
+integral transform:
+ξ ∈Rm
++
+∗7→
+Z
+Rm κ(ξ · x)χF(x) dx.
+We refer to Lebovici (2022, Example 3.18) for a counter-example. In some special cases,
+however, such as when κ(t) = exp(−t), hybrid transforms and classical transforms coincide
+up to a rescaling (Lebovici, 2022, Examples 5.12 and 5.17). The interest in hybrid transforms
+over classical transforms can be motivated by the following example:
+Example 4 The one-parameter hybrid transform with kernel κ(t) = exp(−t) is also known
+as the persistent magnitude (Govc and Hepworth, 2021).
+It is used in O’Malley et al.
+(2023) as a new measure for estimating fractal dimensions of finite subsets X ⊆Rn.
+2.4 Comparison of Euler characteristic tools with persistence diagrams
+Suppose that F is a one-parameter filtration. In this case, Euler characteristic curves and
+hybrid transforms can simply be written as statistics of persistence diagrams. Denote the
+degree k persistence diagram of F by Dk = {(ai, bi)}nk
+i=1 where −∞< ak
+i < bk
+i ≤∞and an
+integer nk ≥0. There exists k0 such that persistence diagrams Dk are empty for all k ≥k0.
+It is then straightforward to check that:
+χF =
+X
+k≥0
+nk
+X
+i=1
+(−1)k1[ak
+i ,bk
+i ).
+(2.4)
+Let κ ∈L1(R) and consider a primitive κ of κ. The hybrid transform with kernel κ of χF
+therefore writes as:
+ψκ
+F : ξ ∈R∗
++ 7→
+X
+k≥0
+nk
+X
+i=1
+(−1)k
+κ
+
+ξ · bk
+i
+
+−κ
+
+ξ · ak
+i
+
+,
+(2.5)
+with the convention that κ(ξ · bk
+i ) is the limit of κ at +∞when bk
+i = +∞. This connection
+between persistence diagrams and the one-parameter descriptors used in this article will be
+used for interpretation and in the asymptotic results of Section 6.
+As we can see from (2.4) and (2.5), considering Euler curves and hybrid transforms
+instead of persistence diagrams implies a loss of information. More precisely:
+• Both Euler characteristic curves and hybrid transforms can be written as an alternated
+sum over all homological degrees. As a consequence, the information contained in
+persistence diagrams is summed up across all homological degrees and reduced to a
+single descriptor.
+9
+
+• Even if only one persistence diagram is non-empty, the birth-death pairing of the
+points is lost while computing the Euler characteristic curve or hybrid transforms. In
+other words, Euler curves and hybrid transforms only depend on the sets {ai
+k} and
+{bi
+k} of all births and deaths respectively.
+• Worse still, Euler curves are defined using indicator functions. As a consequence, the
+persistence diagrams {(0, 1)} and {(0, 1/2), (1/2, 1)} share the same Euler curve and
+the same hybrid transforms for all kernels. Therefore, the lifetime of a feature b −a,
+usually used as an indicator of the significance of the point (a, b) in the diagram is
+inaccessible.
+The purpose of the following sections is to show that this loss of information does not
+result in a loss of accuracy when using Euler curves and hybrid transforms in machine
+learning tasks. Moreover, we show that the computation time is greatly reduced. This is
+due to the fact that Euler curves and hybrid transforms are computed using (2.1) and (2.2),
+bypassing the computation of homology and of persistence diagrams. This theoretical fact
+is backed up by experiments in Section 4.5. Finally, we use the fact that Euler curves and
+hybrid transforms can naturally be adapted to filtrations with more than one parameter,
+while there is no analogues of (2.4) and (2.5) in this case. We believe that these major gains
+indicate that such descriptors should be preferred over persistence diagrams when tackling
+machine learning problems.
+3 Method
+In this section, we describe the algorithms used to compute our descriptors and their implementation. We also give some intuition on choosing the kernel of hybrid transforms.
+Finally, we give heuristics on the type of information captured by Euler curves and their
+transforms on synthetic data sets.
+3.1 Algorithm
+In every experiment, we directly compute Euler characteristic profiles and their hybrid
+transforms using formulae (2.1) and (2.2). Each algorithm takes as input a grid of size
+d1 × . . . × dm on which the Euler characteristic profile or the hybrid transform is evaluated.
+The output array of size d1 × . . . × dm is an exact sampling of the descriptor. Therefore,
+our topological descriptors vectorize m-parameter filtrations into d1 × . . . × dm arrays that
+can be used as input to any classical machine learning algorithm.
+Complexity.
+The algorithm computing Euler characteristic profiles with resolution d1 ×
+. . . × dm has time complexity O(|K| + d1 · . . . · dm) in the worst case.
+The algorithm
+computing hybrid transforms with the same resolution has a worst-case time complexity of
+O(|K| · d1 · . . . · dm). In comparison, computing a persistence diagram has time complexity
+O(|K|ω) in the worst case where 2 ≤ω < 2.373 is the exponent for matrix multiplication;
+see Milosavljevi´c et al. (2011).
+Implementation.
+A Python implementation of our algorithms is freely available online on
+our GitHub repository: https://github.com/vadimlebovici/eulearning. In practice,
+our implementation allows for two different ways of choosing a sampling grid. The first
+10
+
+(a) κ(s) = exp(−s4)
+(b) κ(s) = s4 · exp(−s4)
+(c) κ(s) = s8 · exp(−s8)
+Figure 3: Hybrid transforms of χF = 1[a,b) for several choices of kernel κ
+method takes as input bounds [(a1, b1), . . . , (am, bm)] and a resolution d1 × . . . × dm. We
+then compute a sampling of our descriptors on a uniform discretization of the subset [a1, b1]×
+. . . × [am, bm] ⊆Rm. This method has the disadvantage of requiring prior knowledge about
+the data. For Euler characteristic profiles, the second method consists in giving as input a
+list [(p1, q1), . . . , (pm, qm)] with real numbers 0 ≤pi < qi ≤1. The algorithm then computes
+the pi-th and the qi-th percentiles of the i-th filtration for each i = 1, . . . , m. Finally, the
+Euler profiles are uniformly sampled on a d1 × . . . × dm grid ranging from the lowest to the
+highest percentile on each axis. For the hybrid transforms, we provide a list [p1, . . . , pm] of
+real numbers 0 ≤pi ≤1 and a positive real number α. The algorithm then computes the
+pi-th percentiles vi of the i-th filtration for each i = 1, . . . , m. The integral transforms are
+uniformly sampled on a d1 ×. . .×dm grid ranging from 0 to α/vi on each axis. This method
+does not require any prior knowledge of the data but depends on a choice of parameters.
+We give a few heuristics regarding the choice of the kernel function below.
+Kernel choice.
+To interpret integral transforms of Euler curves, we set m = 1 and compute them on the simple function χF = 1[a,b) with a < b ∈(0, +∞). Recall that the hybrid
+transform has the simple expression (2.5). Figure 3 shows the hybrid transforms for several
+kernels. For every p > 0, the hybrid transform with primitive kernel κ : s 7→−exp(−sp) has
+a minimum in
+pq
+p(log(b)−log(a))
+bp−ap
+, which tends to 1/b as p →∞. As a consequence, transforms
+of this type yield smoothed versions of the curve t 7→χF(1/t), that is, of an Euler curve with
+inverted scales. Similarly, the hybrid transform with primitive kernel κ : s 7→−sp exp(−sp)
+has a minimum that tends to 1/a and a maximum that tends to 1/b as p →∞, with a
+spikier aspect as p →∞. Transforms of this type record the variations of the Euler characteristic curve with inverted scales. We refer to the following section for more involved
+experiments on synthetic data.
+3.2 Heuristics for the Euler curves and their transforms
+In this section, we assume that m = 1 and study the Euler characteristic curves associated
+with the filtered ˇCech complex of a point cloud and the hybrid transforms of these curves.
+We overview how these descriptors can extract information about the input data’s topology,
+geometry, and sampling density. As already mentioned in Example 2, we instead use alpha
+filtration in numerical experiments for computational reasons.
+11
+
+Poisson and Ginibre point processes
+While apparently coarse descriptors as opposed to persistence diagrams, Euler characteristic
+curves allow us to extract relevant scales at which topological differences between two
+different processes are revealed. To illustrate this claim, we try to discriminate between two
+types of point processes: a Poisson point process (PPP) and a Ginibre point process (GPP).
+This setup has been introduced in Obayashi et al. (2018). Using topological descriptors to
+classify point processes has been extensively studied in Biscio et al. (2020). Ginibre processes
+imply repulsive interactions between points. While a standard PPP could have some very
+small and very large cycles, we expect the GPP to have more medium-sized cycles since
+points tend to be well dispersed. Ginibre point processes are generated using Decreusefond
+and Moroz (2021). We classify this toy data set with a random forest classifier and select
+the two scales corresponding to maxima of the feature importance function of the classifier.
+In Figure 4, we plot two examples of point clouds together with their alpha complexes at
+these scales.
+(a) PPP
+(b) GPP
+(c) PPP
+(d) GPP
+Figure 4: Examples of alpha complexes on PPP and GPP point clouds at two scales t1
+(Figures (a) and (b)) and t2 (Figures (c) and (d)) with t1 < t2.
+We plot Euler curves in Figure 5a. The Euler curves suggest that these classes differ at
+different scales, as it was visible in Figure 4:
+• The Euler curves of the PPP class decrease more steeply. Indeed, a GPP has repulsive
+interactions between the points. Therefore, the pairwise distance between points tends
+to be larger and connected components do not die too early.
+• The global minimum for the GPP class is lower.
+• Compared to curves of the GPP class, the curves of the PPP class tend to stay negative
+for a longer time. Indeed, PPP allows for very large cycles to exist since there will
+typically be some large zones without any point, which is proscribed by GPP.
+We remark that as opposed to persistence diagrams, our approach uses the birth times of
+edges instead of the usual degree 1 homological features. It seems that this information
+suffices to discriminate between the two classes.
+We plot the transforms of these curves for several kernels in Figures 5b and 5c. Choosing
+the primitive kernel κ : s 7→exp(−s) emphasises the small scales of the Euler curves
+in the larger scales of the transform.
+Such a descriptor separates well the two classes
+due to the earlier death of connected components for the PPP class. The primitive kernel
+κ : s 7→exp(−s4) also extracts this information. In addition, it has a higher global maximum
+for the GPP class that also enables distinction between the two classes. This maximum is
+12
+
+created by the global minimum of the Euler curves. This experiment is a piece of evidence
+that this kernel carries more information than the exponential kernel and will therefore be
+preferred for applications.
+(a) ECC
+(b) HT, κ(s) = exp(−s)
+(c) HT, κ(s) = exp(−s4)
+Figure 5: Euler characteristic curves and their transforms for PPP VS GPP data set
+Different samplings on a manifold
+We consider point clouds sampled on manifolds. We illustrate how our various descriptors
+can separate the information coming from the sampling density and the one coming from
+the shape of the support manifold.
+We consider two set-ups.
+The first one consists of
+clouds of 500 points sampled in two different ways on a torus embedded in R3. The first
+sampling is uniform (Diaconis et al., 2013). The second is a non-uniform sampling where
+we draw (θ, φ) uniformly in [0, 2π]2 and obtain a point on the torus through the embedding
+ΨT2 : (θ, φ) 7→(x1, x2, x3) where:
+
+
+
+x1 = (2 + cos(θ)) cos(φ),
+x2 = (2 + cos(θ)) sin(φ),
+x3 = sin(θ).
+The second set-up consists of clouds of 500 points drawn in two ways on the unit sphere of
+R3. The first sampling is uniform. The second sampling is a non-uniform sampling where
+we draw θ uniformly on [0, π] and φ according to a normal distribution centred on π. We
+obtain a point on the sphere via the classical spherical coordinates parametrization ΨS2 :
+(θ, φ) 7→(x1, x2, x3) where:
+
+
+
+x1 = sin(θ) cos(φ),
+x2 = sin(θ) sin(φ),
+x3 = cos(θ).
+In Figures 6a and 6b, we show the Euler curves and their hybrid transforms with primitive
+kernel κ : s 7→cos(s) for these two classes of samplings on the torus. Up to a rescaling, this
+corresponds to a Fourier sine transform. In Figure 6c, we show the hybrid transforms for
+the two classes of samplings on the sphere.
+In both cases, Euler curves associated with data drawn on the same manifold all have
+the same profile, with a minimum value that tends to be lower for the uniform sampling.
+Similarly, the oscillations of the transforms are in phase and have the same amplitude.
+However, from one manifold to another, the phase and amplitude of the oscillations of
+the transforms differ significantly. This suggests that they are related to global quantities
+13
+
+and are signatures of the support manifold. In contrast, the sampling scheme shows up in
+the vertical shifts of the oscillations of the transforms. This interpretation allows us to go
+beyond the classical signal/noise dichotomy of persistence diagrams. Although it makes no
+doubt that this sampling information can be retrieved from the points close to the diagonal
+in the diagram, it is still unclear how to untangle the information on the sampling density
+itself and its support directly on the diagrams.
+(a) ECC, torus data
+(b) HT, torus data
+(c) HT, sphere data
+Figure 6: ECC and HT, two sampling on the torus and the sphere
+Signal in clutter noise
+In this final illustrative experiment, we try to distinguish patterns in a heavy clutter noise.
+One class has one line hidden in the noise, while the other has two. Each line will induce
+a very dense zone creating early dying connected components. In Figure 7, we plot two
+examples of point clouds, the Euler curves of each class, and their hybrid transform with
+primitive kernel κ : s 7→exp(−s4). We also provide PCA plots of these two descriptors.
+The difference between the two classes is visible at the beginning of the Euler characteristic
+curves. However, looking at the full curve does not allow us to correctly see this difference,
+as shown by the PCA plot. On the contrary, the transform puts a strong emphasis on the
+beginning of the Euler curves, leading to a direct linear separation of the two classes. As
+a final sanity check, we ran a k-means algorithm to cluster between the two classes and
+reached an accuracy of 99% for the hybrid transforms and only 52.5% for the Euler curves.
+4 Experiments
+In this section, we present all quantitative experiments conducted on synthetic and realworld point cloud data and on real graph data sets. Material to reproduce our experiments is available online on our GitHub repository: https://github.com/vadimlebovici/
+eulearning. Our timing experiments have been run on a workstation with an Intel(R)
+Core(TM) i7-4770 CPU (8 cores, 3.4GHz) and 8 GB RAM, running GNU/Linux (Ubuntu
+20.04.1).
+4.1 Curvature regression
+We consider a set-up from Bubenik et al. (2020) where we draw 1000 points uniformly at
+random on the unit disk of a surface of constant curvature K and try to predict K in a
+supervised fashion. Recall that if K > 0 (resp. K = 0, K > 0), the corresponding surface
+14
+
+(a) raw data, one hidden line
+(b) ECC
+(c) PCA on ECC
+(d) raw data, two hidden lines
+(e) HT, κ(s) = exp(−s4)
+(f) PCA on HT
+Figure 7: Pattern hidden in clutter noise
+is a sphere (resp. the Euclidean plane, the hyperbolic plane). We observe 101 samples from
+the unit disk of the space with curvature [−2, −1.96, . . . , 1.96, 2] and validate our model on
+a testing set of 100 point clouds sampled from the disk of the space with random curvature
+drawn uniformly in [−2, 2]. We compare the R2 scores in Table 1 with that of the original
+paper, which uses persistent landscapes (PL) along with a support vector regressor (SVR)
+and with Persformer (Reinauer et al., 2021). Note that since we are trying to tackle a
+regression problem, we use an SVR or a random forest regressor to predict the curvature
+from our vectorization.
+Method
+PL+SVR
+Persformer
+ECC+SVR
+ECC+RF
+HT+SVR
+HT+RF
+R2 score
+0.78
+0.94
+0.70
+0.93
+0.79
+0.89
+Table 1: R2 score for curvature regression data
+First, we remark that the ECC descriptor combined with a random forest has an accuracy comparable to state-of-the-art methods using persistence diagrams. We also remark
+that taking a transform does not improve the regression accuracy when considering a robust
+classifier such as RF but does improve the accuracy when using a linear regressor (SVR).
+Note that hybrid transforms combined with a linear regressor have an accuracy similar to
+that of persistent landscapes. However, persistent landscapes require the computation of
+the entire persistence diagrams, while hybrid transforms bypass this costly operation.
+15
+
+4.2 ORBIT5K data set
+Supervised classification.
+The ORBIT5K data set is often used as a standard benchmark
+for classification methods in topological data analysis (Adams et al., 2017; Carri`ere et al.,
+2020; Reinauer et al., 2021). This data set consists of subsets of a thousand points in the
+unit cube [0, 1]2 generated by a dynamical system that depends on a parameter ρ > 0.
+To generate a point cloud, an initial point (x0, y0) is drawn uniformly at random in [0, 1]2
+and then the sequence of points (xn, yn) for n = 0, . . . , 999 is generated recursively via the
+dynamic:
+xn+1 = xn + ρyn (1 −yn)
+mod 1,
+yn+1 = yn + ρxn+1 (1 −xn+1)
+mod 1.
+In Figure 8, we illustrate typical orbits for ρ ∈{2.5, 3.5, 4.0, 4.1, 4.3}.
+(a) ρ = 2.5
+(b) ρ = 3.5
+(c) ρ = 4.0
+(d) ρ = 4.1
+(e) ρ = 4.3
+Figure 8: Examples of point clouds from the ORBIT5K data set.
+Given an orbit of 1000 points, we try to predict the value of the parameter ρ, which takes
+value in {2.5, 3.5, 4.0, 4.1, 4.3}. We generate 700 training and 300 testing orbits for each class.
+We compare our accuracy scores with standard classification methods using persistence
+diagrams in Table 2. The results are averaged over ten runs. Sliced Wasserstein kernels
+(SW-K) and Persistence Fisher kernels (PF-K) are the two state-of-the-art kernel methods
+on persistence diagrams taken respectively from Carriere et al. (2017) and Le and Yamada
+(2018). Perslay and Persformer are two methods that use a neural network architecture
+to vectorize persistence diagrams (Carri`ere et al., 2020; Reinauer et al., 2021). The Euler
+characteristic curves and one-parameter hybrid transforms (HT1) are computed on the
+alpha filtration of the point cloud. The Euler characteristic surfaces and two-dimensional
+hybrid transforms (HT2) are computed using a function-alpha filtration associated with a
+kernel density estimator post-composed with a decreasing function. The decreasing function
+is x 7→−x for the ECSs and x 7→exp(−x2) for the HTs. All descriptors have a resolution
+of 900 (hence of 30 × 30 for two-parameter ones) and were classified using the XGBoost
+classifier (Chen and Guestrin, 2016). We select the hyperparameters of our descriptors by
+cross-validation:
+• For the ECC, the quantiles (see Implementation in Section 3.1) are selected in {(0.1, 0.9),
+(0.2, 0.8), (0.3, 0.7)}.
+• For the ECS, the quantiles are selected in the same set as for the ECC for both
+parameters.
+• For the HT1, the range is selected in {[0, 50], [0, 100], [0, 500], [0, 1000]} and the primitive kernel κ in {s 7→exp(−s4), s 7→s4 exp(−s4), s 7→s8 exp(−s8)}.
+16
+
+• For the HT2, the primitive kernel and the range for the first parameter are the same
+as for the HT1, and the range for the second parameter is selected in {[0, 50], [0, 80],
+[0, 100], [0, 500]}.
+We show in Figure 9 some examples of each descriptor renormalized by the number
+of points for the classes ρ = 2.5 and ρ = 4.3, where the HT2 is computed with κ : s 7→
+s4 exp(−s4).
+(a) ECS
+(b) HT2
+Figure 9: Examples of 2D descriptors
+Method
+SW-K
+PF-K
+Perslay
+Persformer
+Accuracy
+83.6 ± 0.9
+85.9 ± 0.8
+87.7 ± 1.0
+91.2 ± 0.8
+Method
+ECC + XGB
+HT1 + XGB
+ECS + XGB
+HT2 + XGB
+Accuracy
+83.8 ± 0.5
+82.8 ± 1.4
+91.8 ± 0.4
+89.9 ± 0.5
+Table 2: Classification scores for the ORBIT5K data set
+One-parameter descriptors have accuracy similar to kernel methods on persistence diagrams at a reduced computational cost, while two-parameter descriptors compete with
+neural network-based vectorization methods. We make our claims on computational times
+more precise in Section 4.5.
+17
+
+Ablation study.
+We also study the role of the dimension of the feature vector in the
+supervised classification task. The results are shown in Figure 10. When plugging a random forest classifier, all descriptors are robust to a decrease in the size of the feature
+vector.
+However, hybrid transforms seem to maintain a competitive accuracy for lowdimensional features, especially the two-parameter ones. When using an SVM classifier for
+the one-parameter descriptors, the gain from considering a hybrid transform is clear, and
+the accuracy of the SVM benefits from this strong dimension reduction. Evaluating hybrid
+transforms at only three values of ξ ∈R∗
++ yields feature vectors achieving approximately
+80% accuracy, demonstrating the compression properties of this tool.
+(a) one-parameter, RF classifier
+(b) two-parameter, RF classifier
+(c) one-parameter, SVM classifier
+Figure 10: Accuracy with respect to feature dimension.
+4.3 Sydney object recognition data set
+The Sydney urban objects recognition data set consists of 3D point clouds of everyday
+urban road objects scanned with a LIDAR (De Deuge et al., 2013) traditionally used for
+multi-class classification.
+Likewise to Section 4.2, all descriptors are computed using a
+function-alpha filtration associated with a kernel density estimator post-composed with a
+decreasing function.
+Unsupervised setting.
+In Figure 11, we show a PCA of the ECSs and HTs on the classes
+4-wheeler vehicles (labelled 0), buses (2), cars (3), and pedestrians (4). In this case, the
+ECSs separate the class of pedestrians from all the vehicle classes. The same separation
+is achieved by the HTs with primitive kernel κ : s 7→s4 exp(−s4). In contrast, HTs with
+primitive kernel κ : s 7→exp(−s4) separate buses from other classes. These experiments
+illustrate the flexibility provided by a broad choice of kernels for the hybrid transforms.
+Supervised setting.
+Even more striking are the experiments from Figure 12. We perform
+a Linear Discriminant Analysis for classes cars (3), pedestrians (4), and vans (13) to embed
+the HTs and ECSs in R2. All the classes are separated by the HTs with primitive kernel
+κ : s 7→s4 exp(−s4). In comparison, the ECSs only manage to separate the pedestrian class
+from the two motor-vehicle classes.
+18
+
+(a) ECS
+(b) HTs, κ(s) = exp(−s4)
+(c) HTs, κ(s) = s4 exp(−s4)
+Figure 11: PCA plots of ECSs and HTs for the Sydney object recognition data set.
+(a) ECS
+(b) HTs, κ(s) = s4 exp(−s4)
+Figure 12: LDA plots of ECSs and HTs for the Sydney object recognition data set.
+4.4 Graph data
+We have applied our method to the supervised classification of graph data.
+To build
+sublevel-sets filtrations of graphs, we consider the heat-kernel signature introduced in Sun
+et al. (2009) and defined as follows. For a graph G = (V, E), the HKS function with diffusion
+parameter t is defined for each v ∈V by:
+hkst(v) =
+|V |
+X
+k=1
+exp(−tλk)ψk(v)2,
+where λk is the k-th eigenvalue of the normalized graph Laplacian and ψk the corresponding
+eigenfunction. We consider the HKS with parameters t = 1 and t = 10 as filtrations. We
+also consider the 1/2−Ricci and Forman curvatures (Samal et al., 2018), centrality, and
+edge betweenness on connected graphs.
+In addition, some data sets (proteins, cox2,
+dhfr) come with functions defined on the graph nodes. We can use several combinations of
+these functions to define sublevel-sets filtrations of graphs and compute Euler characteristic
+profiles (ECP) and hybrid transforms (HTn).
+For this set of experiments, we cross-validate over several combinations of the filtration
+functions proposed above, several truncations of the vectorization (which had little impact in
+practice), and a primitive kernel chosen among {s 7→cos(s), s 7→cos(s2), s 7→exp(−s4), s 7→
+s4 exp(−s4)} for HTn. We report our scores in Table 3. The first four methods are stateof-the-art classification methods on graphs that use kernels or neural networks. We report
+19
+
+Method
+mutag
+cox2
+dhfr
+proteins
+collab
+imdb-b
+imdb-m
+nci1
+SV
+88.2(0.1)
+78.4(0.4)
+78.8(0.7)
+72.6(0.4)
+79.6(0.3)
+74.2(0.9)
+49.9(0.3)
+71.3(0.4)
+RetGK
+90.3(1.1)
+81.4(0.6)
+81.5(0.9)
+78.0(0.3)
+81.0(0.3)
+71.9(1.0)
+47.7(0.3)
+84.5(0.2)
+FGSD
+92.1
+-
+-
+73.4
+80.0
+73.6
+52.4
+79.8
+GIN
+90(8.8)
+-
+-
+76.2(2.6)
+80.6(1.9)
+75.1(5.1)
+52.3(2.8)
+82.7(1.6)
+Perslay
+89.8(0.9)
+80.9(1.0)
+80.3(0.8)
+74.8(0.3)
+76.4(0.4)
+71.2(0.7)
+48.8(0.6)
+73.5(0.3)
+Atol
+88.3(0.8)
+79.4(0.7)
+82.7(0.7)
+71.4(0.6)
+88.3(0.2)
+74.8(0.3)
+47.8(0.7)
+78.5(0.3)
+ECC 1D
+87.2(0.7)
+78.1(0.2)
+79.4(0.5)
+74.7(0.4)
+77.3(0.2)
+72.4(0.4)
+48.5(0.3)
+74.4(0.2)
+HT 1D
+87.4(0.8)
+78.1(0.2)
+77.9(0.4)
+73.3(0.4)
+78.2(0.2)
+73.9(0.4)
+49.7(0.4)
+73.9(0.2)
+ECP
+90.0(0.8)
+80.3(0.4)
+82.0(0.4)
+75.0(0.3)
+78.3(0.1)
+73.3(0.4)
+48.7(0.4)
+76.3(0.1)
+HT nD
+89.4(0.7)
+80.6(0.4)
+83.1(0.5)
+75.4(0.4)
+77.6(0.2)
+74.7(0.5)
+49.9(0.4)
+76.4 (0.2)
+Table 3: Mean accuracy and standard deviation for graph data.
+the scores from the original papers, Tran et al. (2019); Zhang et al. (2018); Verma and
+Zhang (2017); Xu et al. (2019). Perslay (Carri`ere et al., 2020), and Atol (Royer et al., 2021)
+are topological methods that transform the graphs into persistence diagrams using HKS
+functions. It is known that Atol performs especially well on large data sets (both in terms
+of number of data and graphs size), i.e., collab and NCI1. Still, we reach a similar to
+better accuracy for all the other data sets.
+Besides highly competitive classification scores, our method has two advantages over the
+other topological methods. First, we bypass the computation of persistence diagrams and
+thus classify with lower computational cost; see Sections 3.1 and 4.5. Second, as opposed to
+other invariants such as multi-parameter persistent images (Carri`ere and Blumberg, 2020),
+our method naturally generalizes to m-parameter persistence with m ≥3 at a very low
+computational cost.
+To our knowledge, this is the first time a topology-based method
+uses more than 3 filtration parameters. This results in an increase in accuracy since each
+filtration function leverages information on the graph-data structures.
+Note that the methods SV, FGSD, and GIN do not average ten times and rather consider
+a single 10-fold sample which can slightly boost their accuracies.
+4.5 Timing
+In this section, we compare the computational cost of our different methods to that of
+persistence images, a well-known vectorization of persistence diagrams introduced in Adams
+et al. (2017) and generalized to the multi-parameter setting in Carri`ere and Blumberg
+(2020). We choose to compare the computational cost of our methods to that of persistence
+images as they appear to be a faster vectorization method than persistence kernels and
+persistence landscapes; see (Carri`ere and Blumberg, 2020, Table 2).
+Constant resolution.
+We report in Table 4 the time to compute our descriptors and
+persistent images on the full ORBIT5K data set with a fixed resolution of 900. We assume that
+simplex trees are precomputed1 using the Gudhi library (Rouvreau, 2015). Our descriptors
+are computed using the parameters achieving the highest accuracy for the classification
+1. Note that computing simplex trees takes around 66s in the one-parameter setting and around 420s in
+the two-parameter setting; the difference lies in the cost of computing codensity on point clouds.
+20
+
+task; see Section 4.2. Persistence images are computed with the Gudhi library for oneparameter filtrations and with the MMA package for two-parameter filtrations (Loiseaux et al.,
+2022b) with default parameters and the same resolution as our two-parameter descriptors,
+i.e., 30 × 30. To compute persistence images, one first needs to compute the persistence
+diagrams of simplex trees in the one-parameter case or persistence approximations in the
+two-parameter case (Loiseaux et al., 2022a, Section 3). We include these additional costs
+in the computational times of persistent images. However, the time to compute the PI1
+descriptor on the full ORBIT5K data set breaks down to 5 seconds to compute the persistence
+diagrams and 134 seconds for the persistence images themselves.
+ECC
+HT1
+PI1
+ECS
+HT2
+PI2
+16
+719
+139
+144
+805
+2034
+Table 4: Computation times (s) for ORBIT5K with constant resolution.
+As expected from the time complexities of the algorithms (Section 3.1), Euler characteristic profiles are at least ten times faster than persistence images to compute, and hybrid
+transforms are four times faster in the two-parameter case. One-parameter hybrid transforms may appear costly to compute, but this point will be mitigated in the next paragraph.
+Finally, we point out that we implemented our tools in Python and not in C++, which is
+very likely to result in longer computation times. On the contrary, persistence images in
+one and two parameters both benefit from a C++ implementation.
+Constant accuracy.
+We report in Table 5 the time to compute our descriptors on the
+full ORBIT5K data set with the lowest resolution before accuracy drop-out as reported in
+Figure 10. More precisely, we chose the lowest possible resolutions to ensure a classification
+accuracy of 82% for one-parameter descriptors and of 89% for two-parameter descriptors,
+that is, a resolution of 30 for ECC, of 9 for HT1, of 20 × 20 for ECS and of 6 × 6 for
+HT2. Other parameters remain unchanged. The interest in using hybrid transforms over
+Euler characteristic profiles is now clear: the concentration of information provided by
+hybrid transforms makes it possible to classify the data set with feature vectors of reduced
+dimension, which considerably speeds up the computations.
+ECC
+HT1
+ECS
+HT2
+16
+5
+135
+69
+Table 5: Computation times (s) for ORBIT5K with smallest resolution before accuracy dropout.
+4.6 Take-home message
+The experiments from this section suggest that Euler characteristic profiles are very powerful descriptors since they allow for state-of-the-art accuracy when coupled with a robust
+classifier (XGB or RF) at a very competitive computational cost. Hybrid transforms have
+21
+
+similar accuracy but are more costly to compute, especially in the one-parameter setting;
+see Table 4. The motivation to use hybrid transforms is two-fold:
+• In an unsupervised setting or when plugging a linear classifier, the lack of diversity
+in Euler characteristic profiles can be detrimental to the separation of classes.
+In
+contrast, hybrid transforms are competitive descriptors in such tasks due to the wide
+diversity in the choice of kernels and their sensitivity to slight variations in Euler
+characteristic profiles.
+• Hybrid transforms provide a very powerful compression of the signal from the Euler
+profiles (Figure 10) at a meagre computational cost (Table 5). This makes hybrid
+transforms robust descriptors combining dimension reduction and feature extraction.
+Theoretically, multi-parameter hybrid transforms benefit from their expression as oneparameter ones (Lemma 5). This allows us to prove almost sure convergence results under
+some mild assumptions in Section 6.
+4.7 Extensions
+We have validated our method on simplicial complexes built on point clouds and graph data.
+Nonetheless, the methodology described in this paper can be extended into two directions.
+First, when dealing with images or 3D volumes, it is common to build cubical complexes
+from data. In this context, Euler characteristic curves have been used as a vectorization
+of the data in Smith and Zavala (2021); Jiang et al. (2020). As there are a vast number
+of filtration functions one can consider on images, it is worth investigating the predictive
+power of the Euler characteristic profiles in this setting. While several applications are
+considered in Richardson and Werman (2014); Beltramo et al. (2022); D lotko and Gurnari
+(2022), a thorough benchmark against other persistence methods and state-of-the-art image
+processing methods is still missing. Moreover, hybrid transforms have still not been studied
+in this context.
+Second, the methodology developed here applies to filtrations F = (Ft)t∈Rm that are
+not necessarily non-decreasing with respect to inclusions. This extends the potential range
+of applications of our tools, notably to the study of time-varying simplicial complexes, as
+done in Xian et al. (2022).
+5 Stability properties
+The success of topological data analysis inherits from the stability theorem for persistence
+diagrams from Cohen-Steiner et al. (2007). Loosely speaking, it means that under mild
+assumptions, small changes in the filtration function imply small changes in the diagram.
+Such results are crucial to designing consistent estimators; see, for instance, Bobrowski
+et al. (2017). Over the past decade, more distances on persistence diagrams have been
+introduced. Inspired by optimal transport theory, the notion of p-Wasserstein distance is
+introduced by Cohen-Steiner et al. (2010) where a stability result is also proven. A finer
+stability result for the p-Wasserstein distance can be found in Skraba and Turner (2020). In
+addition, several stability results for Euler characteristic tools have been derived in Curry
+et al. (2022); D lotko and Gurnari (2022); Perez (2022); Kun Meng and Eloyan (2024); Marsh
+and Beers (2023).
+22
+
+In this section, we state stability results for our topological descriptors. Our results
+compare the L1 norm between Euler characteristic profiles to the signed 1-Wasserstein distance between their so-called signed barcodes. As a corollary, we bound the Lq norms of
+hybrid transforms by the same quantity. To continue our comparison with persistence diagrams, we prove that in the one-parameter case, the signed 1-Wasserstein distance between
+signed barcodes is bounded from above by the well-known 1-Wasserstein distance between
+persistence diagrams.
+The notions of signed barcodes and of signed 1-Wasserstein distance have been introduced in Oudot and Scoccola (2021) and are recalled below. We follow the same conventions
+as in Oudot and Scoccola (2021, Section 2) for the definitions of multisets and bijections
+between them. The rest of the section is devoted to the statement of our stability results.
+All proofs are written in Section 7.1.
+Signed 1-Wasserstein distance.
+The distance we use to state our stability results is
+defined on the class of finitely presented functions over Rm, that is, which can be written as
+a finite Z-linear combination of indicator functions 1Qu for some u ∈Rm. These functions
+include Euler characteristic profiles of finitely generated filtrations (Lemma 15). We denote
+by FP(Rm) the group of finitely presented functions over Rm. These functions have a kind of
+diagram (or barcode) that can be used to define an analogue of the 1-Wasserstein distance.
+A decomposition of φ ∈FP(Rm) is a couple (B+, B−) of finite multisets of points in Rm
+such that:
+φ =
+X
+u∈B+
+1Qu −
+X
+v∈B−
+1Qv.
+Such a decomposition always exists, and there is a unique B = (B+, B−) such that B+∩B−=
+∅, called the signed barcode of φ; see (Oudot and Scoccola, 2021, Proposition 13). While
+two different notions of signed barcode are defined in loc. cit., we focus here on the so-called
+minimal Hilbert decomposition signed barcode.
+Let C and C′ be two finite multisets of points in Rm with the same cardinality and h : C →
+C′ be a bijection between them. The cost of h is the real number cost(h) = P
+u∈C ∥u−h(u)∥1.
+For any two finitely presented functions φ and φ′ with respective signed barcodes (B+, B−)
+and (B′+, B′−), the signed 1-Wasserstein distance between them is:
+bd1
+ φ, φ′
+= inf
+
+ε > 0 : ∃bijection h : B+ ∪B′−→B−∪B′+ with cost(h) ≤ε
+	
+.
+Hence, one has bd1
+ φ, φ′
+∈[0, +∞]. Note that bijections do not allow for unmatched bars,
+as it is common in the persistence literature. In loc. cit., the signed 1-Wasserstein distance
+is defined on signed barcodes. Our definition is essentially equivalent since signed barcodes
+are in one-to-one correspondence with finitely presented functions up to forgetting the order
+in the multisets.
+Stability results.
+We prove stability results involving functional norms on Euler characteristic profiles and their hybrid transforms. The case m = 1 is well known for 1-Wasserstein
+distance on persistence diagrams; see Curry et al. (2022, Lemma 4.10), D lotko and Gurnari
+(2022, Proposition 3.2).
+23
+
+Proposition 7 Let F and F′ be two finitely generated m-parameter filtrations of simplicial
+complexes K and K′ respectively. For any M > 0, we have that
+∥χF −χF′∥1,M ≤(2M)m−1 bd1(χF, χF′) .
+In particular, if m = 1:
+∥χF −χF′∥1 ≤bd1(χF, χF′) .
+This stability result for Euler characteristic profiles implies a similar stability result for
+hybrid transforms, as stated in the following corollary.
+Corollary 8 Let K be a compact subset of Rm
++
+∗and q ∈[1, ∞]. Let F and F′ be onecritical m-parameter filtrations of simplicial complexes K and K′ respectively.
+Let κ ∈
+L1(R) ∩L∞(R). There exists a constant CK,q depending only on K and q such that:
+∥ψκ
+F −ψκ
+F′∥Lq
+K ≤CK,q ∥κ∥∞bd1(χF, χF′) .
+Now, we prove two connections of the signed 1-Wasserstein distance with more classical
+distances between filtrations. The first connection is made with the 1-Wasserstein between
+persistence diagrams (Cohen-Steiner et al., 2010). We start by recalling it. Denote by D
+and D′ the degree k persistence diagrams of F and F′. The p-Wasserstein distance between
+D and D′ is defined as:
+Wp(D, D′) = inf
+η
+ X
+x∈D
+∥x −η(x)∥p
+!1/p
+where the infimum is taken over all bijections η : D ∪∆→D′ ∪∆where ∆= {(s, s)|s ∈R}
+is the diagonal of R2. This definition allows for matchings between diagrams with different
+number of points. We can now state the following connection between the 1-Wasserstein
+distance on diagrams and the signed 1-Wasserstein on Euler characteristic curves.
+Lemma 9 Let F and F′ be two finitely generated one-parameter filtrations of respective
+simplicial complexes K and K′. Denote their respective persistence diagrams D and D′.
+Then,
+bd1(χF, χF′) ≤2
+X
+k≥0
+W1
+ D, D′
+.
+Combined with Proposition 7 and Corollary 8, this lemma ensures that L1 norms of Euler
+characteristic curves and Lq norms of their hybrid transforms are controlled by a classical
+distance between their persistence diagrams. This is another element of comparison between Euler characteristic tools and persistence diagrams. It is important to note that all
+homology degrees have to be taken into account for the result to hold.
+The second connection is established between the signed 1-Wasserstein distance on Euler
+characteristic profiles and L1 norms on filtration functions defined on the same simplicial
+complex, as stated by the lemma below. It has already been formulated in a slightly different
+form in D lotko and Gurnari (2022, Proposition 3.4). Let K be a finite simplicial complex,
+and f : K →Rm a non-decreasing map. We define the 1-norm of f as ∥f∥1 = P
+σ∈K ∥f(σ)∥1.
+24
+
+Lemma 10 Let K be a finite simplicial complex and f, g : K →Rm be non-decreasing
+maps. We have that
+bd1(χf, χg) ≤∥f −g∥1.
+The above lemma clarifies the robustness of our descriptors with respect to perturbations
+of filtrations defined on a fixed simplicial complex.
+This includes, for instance, density
+estimators on point clouds or Ricci curvature and HKS functions on graphs.
+The fact
+that these descriptors are controlled by the L1 distance and not the L∞distance between
+functions is an indicator of their sensitivity to the underlying geometry. Persistent images
+(Adams et al., 2017) share this property, while persistence landscapes (Bubenik et al., 2015;
+Vipond, 2020) do not, as they are controlled by the L∞distance between functions.
+6 Statistical properties
+This section provides statistical guarantees for our descriptors computed on a random sample (X1, . . . , Xn) in Rd, as the sample size n tends to infinity. We adapt recent results
+on asymptotic persistence diagrams to our set-up, to prove some form of universality of
+our topological descriptors. For these asymptotic results to hold, the point cloud must be
+rescaled by a sequence (rn)n∈N that tends to 0 as n tends to infinity. The speed at which rn
+converges to 0 determines the scaling regime and can give different limit results. Theorem
+11 is established in the sparse regime, i.e. such that nrd
+n →0 as n →∞, while Theorems 12,
+13 and 14 are established in the critical (or thermodynamic) regime , i.e. nrd
+n →c ∈]0, ∞[as
+n →∞. All the results are established for compactly supported kernels.
+6.1 Limit theorems for one-parameter hybrid transforms
+This section is devoted to limit theorems for the hybrid transforms of the ˇCech complex of
+an i.i.d. sample in Rd. Theorem 11 is a pointwise law of large numbers, while Theorem 13
+establishes a functional central limit theorem for the hybrid transforms of compactly supported kernels. The purpose of this section is two-fold: we state that under some mild
+assumptions, hybrid transforms are universal in the sense that they converge to an object
+that depends only on the kernel, the filtration, and the sampling scheme. In addition, we
+demonstrate that as the sampling density appears explicitly in Theorems 11 and 13, hybrid
+transforms can, at least asymptotically, be used to discriminate between samples from different probability densities. Theorem 11 is a direct adaptation of Theorem 3.2 of Owada
+(2022) that states an asymptotic result for persistence diagrams in the sparse regime.
+Theorem 11 Let X1, . . . , Xn be an i.i.d. sample drawn according to an a.e. continuous
+bounded Lipschitz density g on Rd. Consider a sequence (rn)n∈N such that nrd
+n →0 and
+n
+→∞as n →∞for all k in J0, d −1K. We denote by Fn the ˇCech filtration
+associated with the rescaled sample
+1
+rn (Xi)n
+i=1. Let T, a > 0 and κ ∈L1(R). Further assume
+that κ is supported on [0, T]. Then there exist functions A0, . . . , Ad−1 on R∗
++ that depend
+only on κ such that for every ξ > a,
+1
+n
+· ψκ
+Fn(ξ)
+−→
+n→∞
+d−1
+X
+k=0
+(−1)k
+(k + 2)! · Ak(ξ) ·
+Z
+Rd gk+2(x) dx
+a.s..
+25
+
+We defer the proof to Section 7.2. Note that a law of large numbers for the Euler characteristic curve has been established in Corollary 6.2 of Bobrowski and Weinberger (2017) for
+all possible regimes and could be integrated to derive a similar result for hybrid transforms.
+It is here a key assumption that we are in the so-called sparse regime, that is, nrd
+n →0. To
+make this law of large numbers more understandable, we make a further assumption that
+we are in the so-called divergence regime, that is nk+2rd(k+1)
+n
+→∞for all k ∈J0, d −1K.
+The sequence defined by rn = n−α for 1
+d < α < 1
+d +
+1
+d2 verifies these two assumptions.
+Similar results can be derived for other subcases of the sparse regime: the Poisson regime
+n
+→c > 0 and the vanishing regime nk+2rd(k+1)
+n
+→0.
+Theorem 11 shows that the pointwise limit of the hybrid transform depends on the
+sampling only through the quantities
+R
+Rd gk+2 for k = 0, 1, . . . , d −1 and they can therefore
+discriminate between different samplings as soon as n is large enough. In addition to this
+law of large numbers, a finer limit result for the Euler characteristic curve is proven in
+Krebs et al. (2021), which we recall hereafter for the sake of completeness. First, recall that
+a function h on Rm is blocked if it can be written h = Pmd
+i=1 bi1Ai where b1, . . . , bmd are
+non-negative real numbers and the Ai are axis-aligned rectangles in Rm. Moreover, recall
+that the Skorohod J1-topology on the space of c`adl`ag functions D([0, T]) is the topology
+induced by the metric:
+dJ1(f, g) := inf
+λ
+
+∥f ◦λ −g∥∞+ ∥λ −Id[0,T] ∥∞
+	
+,
+where the infimum is taken over all increasing continuous bijections of [0, T].
+Theorem 12 (Krebs et al., 2021, Theorem 3.4) Let T > 0 and X1, . . . , Xn be sampled according to a bounded density g on [0, 1]d. Denote by Fn the ˇCech complex associated
+with the point cloud n1/d(Xi)n
+i=1. Assume that blocked functions can uniformly approximate g. There is a Gaussian process G : [0, T] →R such that for t ∈[0, T],
+√n
+ χFn(t) −E[χFn(t)]
+
+−→
+n→∞G(t),
+in distribution in the Skorohod J1-topology. Furthermore, there exist two real-valued functions γ and α such that the covariance of the limiting process is defined by:
+E[G(s)G(t)] = E
+h
+γ
+
+g(Z)1/d(s, t)
+i
+−E
+h
+α
+
+g(Z)1/ds
+i
+E
+h
+α
+
+g(Z)1/dt
+i
+,
+where Z is a random variable with density g.
+We refer to Krebs et al. (2021) for the expression of the two functions γ and α. Here
+again, the distribution of the points appears in the limiting object and, more precisely,
+in its covariance function. We can adapt this theorem to show that hybrid transforms of
+compactly supported kernels are also asymptotically normal.
+Theorem 13 Consider the setting of Theorem 12. Let a, M > 0 and κ ∈L1(R). Further
+assume that κ is supported on [0, T]. Then, there is a Gaussian process ˜G : [a, M] →R
+such that:
+√n
+ ψκ
+Fn −E
+
+ψκ
+Fn
+
+−→
+n→∞
+˜G
+a.s.,
+26
+
+in
+ C0[a, M], ∥· ∥∞
+
+. Furthermore, the covariance of the limiting process is defined by:
+E
+h
+˜G(ξ1)˜G(ξ2)
+i
+= ξ1ξ2
+Z T/ξ1
+0
+Z T/ξ2
+0
+κ(ξ1t) κ(ξ2s) cov
+ G(s), G(t)
+
+ds dt,
+where G is the Gaussian process defined in Theorem 12.
+6.2 Limit theorem for multi-parameter hybrid transforms
+Here, we adopt the sampling model of Hiraoka et al. (2018). Consider a point process Φ
+on Rd and its restriction ΦL to [−L/2, L/2]d. Let S(Rd) be the collection of all finite (nonempty) subsets in Rd, to be thought of as the set of all simplices. Let f = (f1, . . . , fm) :
+S(Rd) →[0, ∞]m be a measurable function, non-decreasing with respect to the inclusions
+of faces. According to Example 1, f induces a filtration on every simplicial complex of
+Rd. The following theorem derives a law of large numbers for the hybrid transform in the
+multi-parameter case.
+Theorem 14 Assume that Φ is a stationary ergodic point process having finite moments.
+Let T, a > 0 and κ ∈L1(R). Assume that κ is supported on [0, T]. We denote by FL the
+filtration induced by the sublevel sets of f on ΦL. Assume that there exists an increasing
+function ρ such that there exists i ∈J1, mK such that for all (x, y) ∈(Rd)2,
+∥x −y∥≤ρ (fi({x, y})) .
+(6.1)
+Under these assumptions, there exists a function H : Rm
++
+∗× R+ →R that depends only on
+κ and f such that, for all ξ = (ξ1, . . . , ξm) ∈Rm
++
+∗and λ > a,
+1
+Ld ψκ
+FL(λξ)
+−→
+L→∞H(ξ, λ)
+a.s..
+This limit theorem is a direct consequence of the results from Hiraoka et al. (2018) for
+persistence diagrams of a large class of filtration functions. We refer to Section 3 of loc. cit.
+for the definition of a stationary ergodic point process. Note that this encompasses most
+cases of usual point processes such as Poisson, Ginibre, or Gibbs. This result makes use of
+the smoothness properties of the hybrid transforms and follows directly from Lemma 5 that
+expresses restrictions of multi-parameter hybrid transforms to lines as one-parameter hybrid
+transforms. Similar results cannot be derived that easily for Euler characteristic profiles, as
+one would need to consider the joint law of several one-parameter filtrations. In addition,
+deriving a multi-dimensional central limit theorem from Penrose and Yukich (2001) would
+require the filter ξ ·f to verify some translation invariance property. In practice, this strong
+assumption is verified by ˇCech and Vietoris-Rips filtrations as well as marked processes; see
+Botnan and Hirsch (2022). However, function-ˇCech and function alpha-filtrations used in
+our experiments do not verify this assumption in general.
+As pointed out in Hiraoka et al. (2018, Example 1.3), ˇCech and Vietoris-Rips filtrations
+satisfy (6.1) for ρ : t 7→2t. We provide below two examples of families a broad family of
+multi-parameter filtrations satisfying (6.1).
+Example 5 It is easy to check that the function-alpha filtration considered in the applications of Sections 4.2 and 4.3 satifies (6.1).
+27
+
+We give another class of filtrations satisfying (6.1) that contains in particular the
+distance-to-measure (DTM) filtrations (Anai et al., 2020).
+Example 6 Let h be a positive and bounded function from Rd to R. The weighted ˇCech
+complex introduced in Anai et al. (2020) is defined as follows. For every x ∈Rd and real
+number t ≥0, we define:
+rx(t) =
+(
+−∞
+if t < h(x),
+t −h(x)
+otherwise.
+We denote by Bh(x, t) = B (x, rx(t)) the closed Euclidean ball of center x and radius rx(t).
+A simplex {x0, . . . , xk} in some finite set X belongs to the weighted ˇCech complex at scale
+t ≥0 if the intersection of closed balls ∩k
+l=0Bh(xl, t) is non-empty. Considering the weighted
+ˇCech complex for all scales t defines a filtration of 2X called weighted ˇCech filtration. The
+weighted ˇCech filtration satisfies (6.1) for ρ : t 7→max(max h, 2t).
+7 Proofs
+In this section, we prove the results stated in Sections 5 and 6.
+7.1 Proofs of stability results
+In the following proofs, we make constant use of the fact that the distance bd1 may be
+computed on any decomposition of the functions and not only on minimal ones, that is,
+on signed barcodes. More precisely, for any decompositions (C+, C−) and (C′+, C′−) of two
+finitely presented functions φ and φ′ respectively, one has:
+bd1
+ φ, φ′
+= inf
+
+ε > 0 : ∃bijection h : C+ ∪C′−→C−∪C′+ with cost(h) ≤ε
+	
+.
+(7.1)
+7.1.1 Profiles of finitely generated filtrations are finitely presented
+The following lemma is well-known. We prove it for completeness. Recall that the k-th
+Betti function of a finitely generated filtration F is defined as the function βF,k : t ∈Rm 7→
+dim Hk(Ft).
+Lemma 15 Let F be a finitely generated m-parameter filtration. The k-th Betti function
+βF,k is finitely presented and χF = P
+k∈Z(−1)kβF,k. In particular, the Euler characteristic
+profile of F is finitely presented.
+Proof
+The fact that βF,k is finitely presented follows from the fact that the family of
+vector spaces (Hk(Ft))t∈Rm forms a finitely presented m-parameter persistence module (see
+Lemma A). This last fact is well known but goes beyond the scope of the paper and is not
+explicitly written elsewhere in the literature. We provide a proof in Appendix A. The equality between the alternated sum of Betti functions of F and its Euler characteristic profile
+follows from the classical formula for the Euler characteristic of any simplicial complex K
+stating that:
+χ(K) =
+X
+k≥0
+(−1)k dim Hk(K).
+28
+
+The fact that χF is finitely presented is then straightforward.
+It is clear from the definition that the signed 1-Wasserstein distance between Euler
+characteristic profiles is bounded from above by the same distance between Betti functions,
+as stated in the lemma below. It will be crucial to proving the other results.
+Lemma 16 Let F and F′ be two finitely generated m-parameter filtrations of simplicial
+complexes K and K′ respectively. Then,
+bd1(χF, χF′) ≤
+X
+k≥0
+bd1
+ βF,k, βF′,k
+
+.
+7.1.2 Proof of Lemma 9
+The degree k persistence diagram of F is given by Dk =
+ ak
+i , bk
+i
+	
+i=1,...,nk for real numbers −∞< ak
+i < bk
+i ≤∞and an integer nk ≥0.
+This diagram induces a decomposition (Ak, Bk) = ({ak
+i }i, {bk
+i }i) of βF,k.
+Similarly, the degree k persistence diagram
+D′
+k =
+n a′k
+j , b′k
+j
+o
+j=1,...,n′
+k
+of F′ induces a decompositon (A′
+k, B′
+k) = ({a′k
+j }j, {b′k
+j }j) of
+βF′,k. Moreover, a partial matching M between Dk and D′
+k induces a bijection of multisets h : A′
+k ∪Bk →Ak ∪B′
+k defined by h(a′) = a and h(b) = b′ when ((a, b), (a′, b′)) ∈M,
+by h(b) = a when (a, b) is unmatched and by h(a′) = b′ when (a′, b′) is unmatched. Moreover, the cost of the matching M and the cost of the bijection h satisfy cost(h) ≤2 cost(M).
+Taking the infimum over all partial matching M, one has bd1
+ βF,k, βF′,k
+
+≤W1(HkF, HkF′).
+Lemma 16 yields the result.
+7.1.3 Proof of Proposition 7
+Consider decompositions (B+, B−) and (B′+, B′−) of χF and χF′ respectively. Assume there
+is a bijection h : B+ ∪B′−→B−∪B′+. If no such bijection exists, then bd1(χF, χF′) is
+infinite, and the inequality trivially holds. One has:
+χF −χF′ =
+X
+u∈B+∪B′−
+1Qu −
+X
+v∈B−∪B′+
+1Qv =
+X
+u∈B+∪B′−
+1Qu −1Qh(u).
+Therefore, recalling the definition of ∥−∥1,M from Section 2, we have:
+∥χF −χF′∥1,M ≤
+X
+u∈B+∪B′−
+∥1Qu −1Qh(u)∥1.
+(7.2)
+By an elementary induction on m ≥1, we can prove that for all u, v ∈Rm,
+∥1Qu −1Qv∥1,M ≤(2M)m−1∥u −v∥1.
+This conludes the proof.
+Assume now that m = 1. The existence of h ensures that ∥χF −χF′∥1 is finite and the
+result follows from (7.2) and the fact that ∥1[u,v)∥1 = |u −v|.
+29
+
+7.1.4 Proof of Corollary 8
+It follows from the definition of hybrid transforms that:
+∥ψκ
+F −ψκ
+F′∥Lq
+K ≤
+
+
+
+
+
+
+
+
+
+∥κ∥∞
+Z
+K
+Z
+R
+|ξ∗χF(s) −ξ∗χF′(s)| ds dξ
+if q ∈[1, ∞),
+∥κ∥∞sup
+ξ∈K
+Z
+R
+|ξ∗χF(s) −ξ∗χF′(s)| ds
+if q = ∞.
+Moreover, Proposition 7 with m = 1 ensures that for any ξ ∈K,
+∥ξ∗χF −ξ∗χF′∥1 ≤bd1(ξ∗χF, ξ∗χF′) .
+To prove the desired inequality, we will prove that bd1(ξ∗χF, ξ∗χF′) ≤∥ξ∥∞bd1(χF, χF′) for
+any ξ ∈Rm
++
+∗. The result then follows from computing the q-norm on both sides. Consider decompositions (B+, B−) and (B′+, B′−) of χF and χF′ respectively.
+They induce
+decompositions (ξ∗B+, ξ∗B−) and (ξ∗B′+, ξ∗B′−) of ξ∗χF = χξ∗F and ξ∗χF′ = χξ∗F′ respectively by the formula ξ∗B± = {ξ · u : u ∈B±} and a similar one for F′. Consider
+a bijection of multisets h : B+ ∪B′−→B−∪B′+.
+It induces a bijection of multisets
+ξ∗h : ξ∗B+ ∪ξ∗B′−→ξ∗B−∪ξ∗B′+ defined by ξ · u 7→ξ · h(u) with cost:
+cost(ξ∗h) =
+X
+t∈ξ∗B+∪ξ∗B′−
+∥t −ξ∗h(t)∥1 =
+X
+u∈B+∪B′−
+∥ξ · u −ξ · h(u)∥1 ≤∥ξ∥∞· cost(h).
+Taking the infimum over all bijections h yields bd1(ξ∗χF, ξ∗χF′) ≤∥ξ∥∞bd1(χF, χF′) by (7.1).
+7.1.5 Proof of Lemma 10
+The couple Cf =
+ {f(σ)}dim σ even, {f(σ)}dim σ odd
+
+is a decomposition of χf. There is a
+similar decomposition Cg of χg. Moreover, the mapping f(σ) 7→g(σ) induces a bijection of
+multisets h : Cf →Cg with cost cost(h) = P
+σ∈K ∥f(σ) −g(σ)∥1 = ∥g −f∥1. The result
+follows from (7.1).
+7.2 Proofs of statistical results
+In this section, we prove the asymptotic results for the hybrid transforms stated in Section 6.
+7.2.1 Proof of Theorem 11
+Let X1, . . . , Xn be an i.i.d. sample drawn according to an a.e. continuous bounded Lipschitz
+density g on Rd. Consider a sequence (rn)n∈N such that nrd
+n →0 and nk+2rd(k+1)
+n
+→∞as
+n →∞.
+Let us define ∆:= {(x, y) : 0 ≤x ≤y < ∞} ∪{(x, ∞) : 0 ≤x < ∞} and for
+every (s, t, u, v) such that 0 ≤s ≤t ≤u ≤v ≤∞, denote by Rs,t,u,v the rectangle (s, t] ×
+(u, v] of ∆. Recall that a finite persistence diagram D = ∪l
+i=1(ai, bi) can be turned into a
+discrete measure µ = Pl
+i=1 δai,bi on ∆. Denote by µk,n the k-th persistence diagram of the
+ˇCech filtration of 1/rn(Xi)n
+i=1, seen as a discrete measure on ∆.
+30
+
+Theorem 3.2 of Owada (2022) ensures that for every k ∈J0, d −1K there exists a unique
+Radon measure µk on ∆such that we have the following vague convergence:
+1
+n
+µk,n
+v
+−→
+n→∞
+1
+(k + 2)!
+Z
+Rd gk+2(x) dx
+
+µk
+a.s.,
+(7.3)
+where for every 0 ≤s ≤t ≤u ≤v ≤∞, there is an indicator geometric function Hs,t,u,v on
+Rd(k+2) defined in (Owada, 2022, Sec. 3.1), which does not depend on g and such that the
+measure µk is defined by:
+µk(Rs,t,u,v) =
+Z
+Rd(k+1) Hs,t,u,v(0, y1, . . . , yk+1) dy1 . . . dyk+1.
+Recall that the primitive kernel κ is such that κ(x) →0 when x →+∞. Therefore, the
+fact that κ is supported on [0, T] implies that the primitive κ is also supported on [0, T].
+For ξ > a, denote by hξ : (x, y) ∈∆7→κ(ξy) −κ(ξx). According to (2.5), one has:
+ψκ
+Fn(ξ) =
+d−1
+X
+k=0
+(−1)k⟨µk,n, hξ⟩.
+Since hξ is continuous and supported on [0, T/a]2, we have by the vague convergence in (7.3)
+that:
+1
+n
+ψκ
+Fn(ξ)
+−→
+n→∞
+d−1
+X
+k=0
+(−1)k
+(k + 2)!
+Z
+Rd gk+2(x)dx
+
+Ak(ξ)
+a.s.,
+where Ak(ξ) =
+R
+∆hξdµk.
+7.2.2 Proof of Theorem 13
+Let T > 0 such that κ is supported in [0, T]. Let a, M > 0 and let ξ ∈[a, M]. According
+to (2.3), we have that:
+ψκ
+F(ξ) = ξ
+Z T/ξ
+0
+κ(ξ · t)χF(t)dt,
+and similarly for χFn. Since κ is in L1, the mappings ψκ
+F and ψκ
+Fn are continuous on [a, M].
+According to Theorem 12, there is a Gaussian process G : [0, T/a] →R+ such that for all
+t ∈[0, T/a], we have that:
+√n
+ χFn(t) −E[χFn(t)]
+
+−→
+n→∞G(t),
+(7.4)
+in distribution in the Skorohod J1-topology. Therefore, by linearity of the mapping χ 7→
+ξ
+R T/ξ
+0
+κ(ξ · t)χ(t)dt, we have that:
+√n
+ ψκ
+Fn −E
+
+ψκ
+Fn
+
+=
+ξ
+Z T/ξ
+0
+κ(ξ · t)
+√n
+ χFn(t) −E[χFn(t)]
+
+dt
+Denote by φ the mapping from the space of c`adl`ag functions D([0, T]) with Skorohod J1topology to (C0([a, M]), ∥· ∥∞) defined by:
+φ : χ 7→
+ 
+ξ 7→ξ
+Z T/ξ
+0
+κ(ξ · t)χ(t)dt
+!
+.
+31
+
+We, therefore, have that:
+√n
+ ψκ
+Fn −E
+
+ψκ
+Fn
+
+= φ
+ √n (χFn −E[χFn])
+
+.
+It is easy to check that:
+∥φ(χ1) −φ(χ2)∥∞≤M
+a ∥χ1 −χ2∥∞
+Z T
+0
+|κ(u)|du,
+so that the mapping φ is Lipschitz and, therefore, continuous. Thus, the continuous mapping
+theorem along with (7.4) yields that almost surely, one has the following convergence in
+(C0([a, M]), ∥· ∥∞),
+√n
+ ψκ
+Fn −E
+
+ψκ
+Fn
+
+−→
+n→∞
+˜G(ξ) := ξ
+Z T/ξ
+0
+κ(ξ · t)G(t) dt.
+The covariance of the limiting process ˜G follows immediately from that of G.
+7.2.3 Proof of Theorem 14
+Let ξ = (ξ1, . . . , ξm) ∈Rm
++
+∗. Denote by µξ∗F
+k,L the measure associated with the k-th persistence diagram of ΦL for the filtration function ξ ·f = Pm
+i=1 ξifi. By hypothesis, there exists
+i ∈J1, mK such that for all (x, y) ∈(Rd)2, ∥x −y∥≤ρ (fi({x, y})). Let ρ′ : x 7→ρ(x/ξi).
+Therefore, as the filtration functions are non-negative and ρ and ρ′ are increasing, we have
+that:
+ρ′
+
+
+m
+X
+j=1
+ξjfj({x, y})
+
+≥ρ′(ξifi({x, y}) ≥ρ(fi({x, y})) ≥∥x −y∥.
+(7.5)
+The filtration function ξ · f therefore verifies all the hypotheses of Theorem 1.5 of Hiraoka
+et al. (2018), which states that there exists a Radon measure νk such that almost surely,
+we have the vague convergence
+1
+Ld µξ∗F
+k,L
+v→νξ·f
+k
+as L →∞. Note that in loc. cit., the
+authors make the additional hypothesis that the filtration function is translation invariant.
+However, this assumption is only needed to derive a central limit theorem on persistent
+Betti numbers but not required for the above law of large numbers, for which we only
+need (7.5) to hold. As in the proof of Theorem 11, we introduce a continuous function
+hλ : (x, y) ∈∆7→κ(λy) −κ(λx).
+This function is supported on [0, T/a]2.
+According
+to (2.5) together with Lemma 5, we have that:
+ψκ
+FL(λξ) =
+d−1
+X
+k=0
+(−1)k⟨µξ∗F
+k,L , hλ⟩.
+Hence the result, by the vague convergence
+1
+Ld µξ∗F
+k,L
+v→νξ·f
+k
+for every k ∈J0, d −1K.

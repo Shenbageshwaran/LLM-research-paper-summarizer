@@ -1,0 +1,48 @@
+{
+  "title": "TinyTLA: Topological landscape analysis for optimization problem classification in a limited sample setting",
+  "authors": [
+    "Gašper Petelin",
+    "Gjorgjina Cenikj",
+    "Tome Eftimov"
+  ],
+  "motivation": "Characterizing optimization problems and their properties is crucial for algorithm selection, algorithm configuration, and building quality benchmarks. Existing landscape feature approaches have limitations such as large computational complexity for high-dimensional problems, sensitivity to sample size and sampling technique, and lack of invariance to transformations. The paper argues that additional research is needed to generate features addressing these limitations.",
+  "knowledge_gap": "The original TLA methodology required a few thousand samples to detect useful topological structures and a few hundred samples minimum to compute features at all. The number of extracted features varied with sample size, and the approach was limited in practical applicability. The paper addresses whether the methodology can be adapted to work with low numbers of samples and whether topological features are complementary to existing landscape features.",
+  "goal": "To extend and improve topological landscape analysis (TLA) methodology by proposing improvements on how to use samples more efficiently to construct point clouds that allow feature extraction with lower numbers of samples, investigate hyperparameter impacts, compare topological features to existing ELA features, and examine generalization across different sample sizes.",
+  "methods": [
+    "Topological Data Analysis (TDA) applied to point clouds from optimization problem samples",
+    "Vietoris-Rips complex construction",
+    "Persistence homology and persistence diagrams",
+    "Persistence images for feature extraction",
+    "Linear combination of sample-space and objective-value distance matrices controlled by parameter α",
+    "PCA for dimensionality reduction",
+    "AutoML (AutoGluon) for classification"
+  ],
+  "metrics": [
+    "Classification accuracy (primary metric)",
+    "Cosine similarity between problem instances",
+    "Pearson linear correlation between features",
+    "Standard deviation of classification accuracy across 30 runs"
+  ],
+  "experiments": "2400 problem instances from 24 problem classes in the COCO (COmparing Continuous Optimizers) benchmark suite. Features extracted from 200 samples per problem instance (uniform sampling in [-5,5]^D). Classification task with 90% training / 10% test split, repeated 30 times with stratified sampling. Sensitivity analysis on hyperparameters (α, smoothing kernel, homology dimension, distance metric, sample size). Generalization analysis across different sample sizes.",
+  "key_findings": [
+    "Topological features are not strongly correlated with existing ELA feature groups, capturing complementary information about optimization problems",
+    "TLA features achieve ~63% classification accuracy on 2D COCO problems, comparable to some ELA feature groups but lower than the best ELA groups",
+    "Concatenating TLA with less informative ELA groups improves accuracy to ~75%; with all ELA groups improves to >90%",
+    "Different homologies (H0, H1, H2) reveal different topological information; H0 is most informative for most dimensions",
+    "Parameter α (balancing sample location vs. objective value information) is critical; optimal range is 0.1-0.3",
+    "Persistence image smoothing is beneficial but over-smoothing degrades performance",
+    "Euclidean, Cityblock, Chebyshev, and Canberra distance metrics perform well; cosine similarity performs poorly",
+    "Topological features are inherently tied to sample size and do not generalize across different sample sizes",
+    "Classification accuracy improves with sample size up to ~400 samples for 2D problems, with diminishing returns thereafter"
+  ],
+  "future_work": [
+    "Investigate relationship between topological features and high-level features to bridge gap between high and low-level feature groups",
+    "Reduce number of highly correlated topological features using Betti numbers and persistence entropy",
+    "Evaluate topological features on algorithm performance prediction tasks beyond problem classification",
+    "Explore how TLA features complement ELA features in predicting algorithm performance and improving generalizability of algorithm selection models",
+    "Extend TLA to use samples visited during algorithm execution rather than static sampling",
+    "Extend methodology to combinatorial optimization problems",
+    "Investigate sensitivity of topological features to sampling techniques and perturbations"
+  ],
+  "paper_type": "empirical"
+}
